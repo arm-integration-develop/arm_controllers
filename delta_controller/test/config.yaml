@@ -1,0 +1,61 @@
+controllers:
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100
+  delta_controller:
+    type: delta_controller/DeltaController
+    active:
+      joint1:
+        joint: "active_joint1"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      joint2:
+        joint: "active_joint2"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      joint3:
+        joint: "active_joint3"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+    passive:
+      parallel_up_a_joint1:
+        joint: "parallel_up_a_joint1"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_up_b_joint1:
+        joint: "parallel_up_b_joint1"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_down_b_joint1:
+        joint: "parallel_down_b_joint1"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_down_a_joint1:
+        joint: "parallel_down_a_joint1"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+
+      parallel_up_a_joint2:
+        joint: "parallel_up_a_joint2"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_up_b_joint2:
+        joint: "parallel_up_b_joint2"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_down_b_joint2:
+        joint: "parallel_down_b_joint2"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_down_a_joint2:
+        joint: "parallel_down_a_joint2"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+
+      parallel_up_a_joint3:
+        joint: "parallel_up_a_joint3"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_up_b_joint3:
+        joint: "parallel_up_b_joint3"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_down_b_joint3:
+        joint: "parallel_down_b_joint3"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+      parallel_down_a_joint3:
+        joint: "parallel_down_a_joint3"
+        pid: { p: 10.0, i: 0, d: 0.75, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+    use_gazebo: true
+    param:
+      f: 0.141067
+      e: 0.065287
+      r_f: 0.09
+      r_e: 0.192

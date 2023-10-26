@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>arm_controllers</name>
+    <version>0.0.0</version>
+    <description>Meta package that contains package.</description>
+    <maintainer email="2028238109@qq.com">Siyang Liu</maintainer>
+
+    <license>BSD</license>
+
+    <author email="2028238109@qq.com">Siyang Liu</author>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <exec_depend>robot_state_controller</exec_depend>
+    <exec_depend>delta_controller</exec_depend>
+    <exec_depend>arm_hybrid_controller</exec_depend>
+
+    <export>
+        <metapackage/>
+    </export>
+</package>

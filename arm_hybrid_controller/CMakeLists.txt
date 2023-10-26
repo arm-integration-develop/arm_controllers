@@ -1,0 +1,95 @@
+cmake_minimum_required(VERSION 3.10)
+project(arm_hybrid_controller)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_definitions(-Wall -Werror)
+
+## Find catkin macros and libraries
+find_package(catkin REQUIRED
+        COMPONENTS
+        roscpp
+
+        effort_controllers
+        pluginlib
+        controller_interface
+        realtime_tools
+        )
+find_package(pinocchio REQUIRED)
+###################################
+## catkin specific configuration ##
+###################################
+catkin_package(
+        INCLUDE_DIRS
+        include
+        LIBRARIES
+        ${PROJECT_NAME}
+        CATKIN_DEPENDS
+        roscpp
+
+        effort_controllers
+        pluginlib
+        controller_interface
+        LIBRARIES ${PROJECT_NAME}
+)
+
+include_directories(
+        include
+        ${catkin_INCLUDE_DIRS}
+)
+
+## Declare cpp executables
+add_library(${PROJECT_NAME}
+        src/${PROJECT_NAME}.cpp
+        )
+
+target_link_libraries(${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+        )
+
+target_link_libraries(${PROJECT_NAME} pinocchio::pinocchio)
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(
+        TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Mark cpp header files for installation
+install(
+        DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+        FILES_MATCHING PATTERN "*.h"
+)
+install(
+        FILES arm_hybrid_controller_plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+## Mark other files for installation
+install(
+        DIRECTORY test
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+#############
+## Testing ##
+#############
+
+add_executable(test_pinocchio
+        test/test_pinocchio.cpp)
+target_link_libraries(test_pinocchio pinocchio::pinocchio)
+#if (${CATKIN_ENABLE_TESTING})
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+#  ## Add gtest based cpp test target and link libraries
+#  catkin_add_gtest(${PROJECT_NAME}-test
+#      test/test_ros_package_template.cpp
+#      test/AlgorithmTest.cpp)
+#  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}_core)
+#endif ()

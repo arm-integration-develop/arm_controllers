@@ -1,0 +1,11 @@
+<library path="lib/libdelta_controller">
+    <!-- controller_interface types -->
+    <class name="delta_controller/DeltaController"
+           type="delta_controller::DeltaController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            This controller realize the delta robot control
+            include publish tf and control motor
+        </description>
+    </class>
+</library>
