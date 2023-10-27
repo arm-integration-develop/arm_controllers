@@ -11,6 +11,7 @@ find_package(catkin REQUIRED
         COMPONENTS
         roscpp
 
+        arm_common
         effort_controllers
         pluginlib
         controller_interface
@@ -28,6 +29,7 @@ catkin_package(
         CATKIN_DEPENDS
         roscpp
 
+        arm_common
         effort_controllers
         pluginlib
         controller_interface

@@ -14,6 +14,7 @@
   <depend>effort_controllers</depend>
   <depend>realtime_tools</depend>
   <depend>pluginlib</depend>
+  <depend>arm_common</depend>
 
   <export>
     <controller_interface plugin="${prefix}/arm_hybrid_controller_plugins.xml"/>

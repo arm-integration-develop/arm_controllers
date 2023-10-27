@@ -23,6 +23,7 @@
 #include <std_msgs/Float64.h>
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Float64MultiArray.h>
+//#include <
 
 namespace arm_hybrid_controller
 {
@@ -62,12 +63,13 @@ private:
 
     ros::Time last_time_{};
     ros::NodeHandle node_;
-    ros::Publisher error_pub_,tau_pub_,tau_without_a_pub_,tau_without_a_v_pub_,tau_exe_pub_;
-    std_msgs::Float64MultiArray tau_error_msg_{},tau_msg_{},tau_without_a_msg_{},tau_without_a_v_msg_{},tau_exe_msg_{};
+    ros::Publisher error_pub_,tau_pub_,tau_without_a_pub_,tau_without_a_v_pub_,tau_exe_pub_,a_pub_;
+    std_msgs::Float64MultiArray tau_error_msg_{},tau_msg_{},tau_without_a_msg_{},tau_without_a_v_msg_{},tau_exe_msg_{},a_msg_{};
 //    realtime_tools::RealtimeBuffer<geometry_msgs::PointStamped> cmd_rt_buffer_;
 
     bool send_tau_ = false;
     int num_hw_joints_;
+
     std::vector<std::string> joint_names_{};
     std::vector<hardware_interface::JointStateHandle> jnt_states_;
 

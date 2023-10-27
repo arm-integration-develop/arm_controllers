@@ -31,6 +31,8 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     tau_exe_msg_.data.resize(num_hw_joints_);
     tau_without_a_msg_.data.resize(num_hw_joints_);
     tau_without_a_v_msg_.data.resize(num_hw_joints_);
+    a_msg_.data.resize(num_hw_joints_);
+    a_pub_ = node_.advertise<std_msgs::Float64MultiArray>("a", 1);
     error_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau_error", 1);
     tau_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau", 1);
     tau_exe_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau_exe", 1);
@@ -52,7 +54,8 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
 void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &period)
 {
     for (int i = 0; i < (int)joints_.size(); ++i) {
-        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_without_a_v_[i]);
+//        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_without_a_v_[i]);
+        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_without_a_[i]);
         tau_exe_msg_.data[i] = *joints_[i].effort_ctrl_->command_buffer_.readFromRT();
         joints_[i].effort_ctrl_->update(time,period);
     }
@@ -69,7 +72,7 @@ void ArmHybridController::computerInverseDynamics()
     for (int i = 0; i < num_hw_joints_; ++i) {
         q_(i) = jnt_states_[i].getPosition();
         v_(i) = jnt_states_[i].getVelocity();
-        a_(i) = (jnt_states_[i].getVelocity()-last_v_[i])/(ros::Time::now().toSec()-last_time_.toSec());
+        a_(i) = (v_(i)-last_v_[i])/(ros::Time::now()-last_time_).toSec();
         last_v_[i] = v_(i);
         zero_[i] = 0.;
     }
@@ -82,6 +85,7 @@ void ArmHybridController::computerInverseDynamics()
         tau_msg_.data[i] = tau_(i);
         tau_without_a_msg_.data[i] = tau_without_a_(i);
         tau_without_a_v_msg_.data[i] = tau_without_a_v_(i);
+        a_msg_.data[i] = a_(i);
     }
 }
 void ArmHybridController::publish_info()
@@ -91,5 +95,6 @@ void ArmHybridController::publish_info()
     tau_exe_pub_.publish(tau_exe_msg_);
     tau_without_a_pub_.publish(tau_without_a_msg_);
     tau_without_a_v_pub_.publish(tau_without_a_v_msg_);
+    a_pub_.publish(a_msg_);
 }
 }// namespace arm_hybrid_controller
