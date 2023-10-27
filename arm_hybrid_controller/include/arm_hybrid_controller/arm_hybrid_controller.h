@@ -16,14 +16,13 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
-//#include <effort_controllers/joint_position_controller.h>
 #include <effort_controllers/joint_effort_controller.h>
 
 #include <string>
 #include <std_msgs/Float64.h>
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Float64MultiArray.h>
-//#include <
+#include <tools/lp_filter.h>
 
 namespace arm_hybrid_controller
 {
@@ -69,11 +68,11 @@ private:
 
     bool send_tau_ = false;
     int num_hw_joints_;
-
     std::vector<std::string> joint_names_{};
     std::vector<hardware_interface::JointStateHandle> jnt_states_;
-
     std::vector<Joint> joints_{};
+
+    LowPassFilter* a_lp_filter_;
 
 
 

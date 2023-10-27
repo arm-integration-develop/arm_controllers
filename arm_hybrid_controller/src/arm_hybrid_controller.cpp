@@ -11,7 +11,7 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
         ROS_ERROR_STREAM("NO URDF FILE PATH");
     controller_nh.getParam("urdf_filename",urdf_filename_);
     controller_nh.getParam("send_tau",send_tau_);
-    ROS_INFO_STREAM(send_tau_);
+    a_lp_filter_ = new LowPassFilter(controller_nh);
     pinocchio::urdf::buildModel(urdf_filename_,model_);
     pinocchio_data_ = pinocchio::Data(model_);
     const std::vector<std::string>& joint_names = robot_hw->get<hardware_interface::JointStateInterface>()->getNames();
@@ -55,7 +55,7 @@ void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &
 {
     for (int i = 0; i < (int)joints_.size(); ++i) {
 //        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_without_a_v_[i]);
-        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_without_a_[i]);
+        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_[i]);
         tau_exe_msg_.data[i] = *joints_[i].effort_ctrl_->command_buffer_.readFromRT();
         joints_[i].effort_ctrl_->update(time,period);
     }
@@ -72,7 +72,9 @@ void ArmHybridController::computerInverseDynamics()
     for (int i = 0; i < num_hw_joints_; ++i) {
         q_(i) = jnt_states_[i].getPosition();
         v_(i) = jnt_states_[i].getVelocity();
-        a_(i) = (v_(i)-last_v_[i])/(ros::Time::now()-last_time_).toSec();
+        double original_a = (v_(i)-last_v_[i])/(ros::Time::now()-last_time_).toSec();
+        a_lp_filter_->input(original_a);
+        a_(i) = a_lp_filter_->output();
         last_v_[i] = v_(i);
         zero_[i] = 0.;
     }
