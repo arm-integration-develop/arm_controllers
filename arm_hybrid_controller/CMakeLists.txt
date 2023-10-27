@@ -44,6 +44,9 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/${PROJECT_NAME}.cpp
+        include/trajectory_interface/pos_vel_acc_state.h
+        include/trajectory_interface/quintic_spline_segment.h
+        include/trajectory_interface/trajectory_interface.h
         )
 
 target_link_libraries(${PROJECT_NAME}
