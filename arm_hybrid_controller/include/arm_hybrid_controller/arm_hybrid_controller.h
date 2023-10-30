@@ -4,14 +4,7 @@
 
 #pragma once
 
-#include <pinocchio/fwd.hpp>
-//must add fwd.hpp before other .h for solve the conflict between ROS and pinocchio
-//https://github.com/wxmerkt/pinocchio_ros_example
-#include <pinocchio/parsers/sample-models.hpp>
-#include <pinocchio/algorithm/kinematics.hpp>
-#include <pinocchio/algorithm/dynamics.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
-#include <pinocchio/parsers/urdf.hpp>
+#include <dynamics_interface/dynamics_interface.h>
 
 #include <pluginlib/class_list_macros.hpp>
 #include <controller_interface/multi_interface_controller.h>
@@ -19,8 +12,8 @@
 #include <effort_controllers/joint_effort_controller.h>
 
 #include <string>
-#include <std_msgs/Float64.h>
 #include <geometry_msgs/PointStamped.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <tools/lp_filter.h>
 
@@ -48,34 +41,13 @@ private:
     {
 //        cmd_rt_buffer_.writeFromNonRT(*msg);
     }
-    void computerInverseDynamics();
-    void publish_info();
-    pinocchio::Model model_;
-    std::string urdf_filename_;
-    pinocchio::Data pinocchio_data_;
-    Eigen::VectorXd tau_{},tau_without_a_{},tau_without_a_v_{};
-    Eigen::VectorXd q_{};
-    Eigen::VectorXd v_{};
-    Eigen::VectorXd last_v_{};
-    Eigen::VectorXd a_{};
-    Eigen::VectorXd zero_{};
 
-    ros::Time last_time_{};
+    dynamics_interface::DynamicsInterface dynamics_interface_;
     ros::NodeHandle node_;
-    ros::Publisher error_pub_,tau_pub_,tau_without_a_pub_,tau_without_a_v_pub_,tau_exe_pub_,a_pub_;
-    std_msgs::Float64MultiArray tau_error_msg_{},tau_msg_{},tau_without_a_msg_{},tau_without_a_v_msg_{},tau_exe_msg_{},a_msg_{};
-//    realtime_tools::RealtimeBuffer<geometry_msgs::PointStamped> cmd_rt_buffer_;
-
-    bool send_tau_ = false;
     int num_hw_joints_;
     std::vector<std::string> joint_names_{};
     std::vector<hardware_interface::JointStateHandle> jnt_states_;
     std::vector<Joint> joints_{};
-
-    LowPassFilter* a_lp_filter_;
-
-
-
 };
 }// namespace arm_hybrid_controller
 

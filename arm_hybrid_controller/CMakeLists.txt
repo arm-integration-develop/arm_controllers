@@ -44,6 +44,8 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/${PROJECT_NAME}.cpp
+        src/dynamics_interface.cpp
+        include/dynamics_interface/dynamics_interface.h
         include/trajectory_interface/pos_vel_acc_state.h
         include/trajectory_interface/quintic_spline_segment.h
         include/trajectory_interface/trajectory_interface.h
@@ -69,6 +71,16 @@ install(
 # Mark cpp header files for installation
 install(
         DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+        FILES_MATCHING PATTERN "*.h"
+)
+install(
+        DIRECTORY include/dynamics_interface/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+        FILES_MATCHING PATTERN "*.h"
+)
+install(
+        DIRECTORY include/trajectory_interface/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
 )
