@@ -27,12 +27,12 @@ bool DynamicsInterface::init(ros::NodeHandle &dynamics_nh,int arm_joints_num)
     tau_without_a_msg_.data.resize(arm_joints_num);
     tau_without_a_v_msg_.data.resize(arm_joints_num);
     a_msg_.data.resize(arm_joints_num);
-    a_pub_ = node_.advertise<std_msgs::Float64MultiArray>("a", 1);
-    error_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau_error", 1);
-    tau_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau", 1);
-    tau_exe_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau_exe", 1);
-    tau_without_a_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau_without_a", 1);
-    tau_without_a_v_pub_ = node_.advertise<std_msgs::Float64MultiArray>("tau_without_a_v", 1);
+    a_pub_ = dynamics_nh.advertise<std_msgs::Float64MultiArray>("a", 1);
+    error_pub_ = dynamics_nh.advertise<std_msgs::Float64MultiArray>("tau_error", 1);
+    tau_pub_ = dynamics_nh.advertise<std_msgs::Float64MultiArray>("tau", 1);
+    tau_exe_pub_ = dynamics_nh.advertise<std_msgs::Float64MultiArray>("tau_exe", 1);
+    tau_without_a_pub_ = dynamics_nh.advertise<std_msgs::Float64MultiArray>("tau_without_a", 1);
+    tau_without_a_v_pub_ = dynamics_nh.advertise<std_msgs::Float64MultiArray>("tau_without_a_v", 1);
     return true;
 }
 void DynamicsInterface::pubDynamics()
