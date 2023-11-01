@@ -38,6 +38,7 @@ void ArmHybridController::starting(const ros::Time& time)
 {
     controller_state_interface_.initTimeData(time);
     mode_ = GRAVITY_COMPENSATION;
+    controller_state_interface_.initDesiredState(jnt_states_);
 }
 void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &period)
 {
@@ -68,7 +69,7 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
     if(dynamics_interface_.send_tau_)
         moveJoint(time,period);
     dynamics_interface_.pubDynamics();
-    controller_state_interface_.publishState(time);
+    controller_state_interface_.update(time,jnt_states_);
 }
 void ArmHybridController::gravity_compensation()
 {

@@ -33,23 +33,23 @@ public:
         state_publisher_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>(controller_nh, "state", 1));
 
         // Preeallocate resources
-        int num_hw_joints = static_cast<int>(joint_names.size());
-        current_state_       = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints);
-        old_desired_state_   = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints);
-        desired_state_       = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints);
-        state_error_         = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints);
+        num_hw_joints_ = static_cast<int>(joint_names.size());
+        current_state_       = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
+        old_desired_state_   = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
+        desired_state_       = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
+        state_error_         = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
         desired_joint_state_ = trajectory_interface::QuinticSplineSegment<double>::State(1);
         state_joint_error_   = trajectory_interface::QuinticSplineSegment<double>::State(1);
 
         state_publisher_->lock();
         state_publisher_->msg_.joint_names = joint_names;
-        state_publisher_->msg_.desired.positions.resize(num_hw_joints);
-        state_publisher_->msg_.desired.velocities.resize(num_hw_joints);
-        state_publisher_->msg_.desired.accelerations.resize(num_hw_joints);
-        state_publisher_->msg_.actual.positions.resize(num_hw_joints);
-        state_publisher_->msg_.actual.velocities.resize(num_hw_joints);
-        state_publisher_->msg_.error.positions.resize(num_hw_joints);
-        state_publisher_->msg_.error.velocities.resize(num_hw_joints);
+        state_publisher_->msg_.desired.positions.resize(num_hw_joints_);
+        state_publisher_->msg_.desired.velocities.resize(num_hw_joints_);
+        state_publisher_->msg_.desired.accelerations.resize(num_hw_joints_);
+        state_publisher_->msg_.actual.positions.resize(num_hw_joints_);
+        state_publisher_->msg_.actual.velocities.resize(num_hw_joints_);
+        state_publisher_->msg_.error.positions.resize(num_hw_joints_);
+        state_publisher_->msg_.error.velocities.resize(num_hw_joints_);
         state_publisher_->unlock();
     }
     void initTimeData(const ros::Time& time)
@@ -69,6 +69,27 @@ public:
         time_data.period = period;                                   // Cache current control period
         time_data.uptime = old_time_data_.uptime + period; // Update controller uptime
         time_data_.writeFromNonRT(time_data);
+    }
+    void initDesiredState(const std::vector<hardware_interface::JointStateHandle> jnt_state)
+    {
+        for (int i = 0; i < num_hw_joints_; ++i)
+        {
+            desired_state_.position[i] = jnt_state[i].getPosition();
+            desired_state_.velocity[i] = jnt_state[i].getVelocity();
+        }
+    }
+    void updateCurrentState(const std::vector<hardware_interface::JointStateHandle> jnt_state)
+    {
+        for (int i = 0; i < num_hw_joints_; ++i)
+        {
+            current_state_.position[i] = jnt_state[i].getPosition();
+            current_state_.velocity[i] = jnt_state[i].getVelocity();
+        }
+    }
+    void update(const ros::Time& time,const std::vector<hardware_interface::JointStateHandle> jnt_state)
+    {
+        updateCurrentState(jnt_state);
+        publishState(time);
     }
     void publishState(const ros::Time& time)
     {
@@ -102,6 +123,7 @@ public:
     trajectory_interface::QuinticSplineSegment<double>::State desired_joint_state_;
     trajectory_interface::QuinticSplineSegment<double>::State state_joint_error_;
 
+    int num_hw_joints_;
     ros::Duration state_publisher_period_;
     TimeData old_time_data_;
     realtime_tools::RealtimeBuffer<TimeData> time_data_;
