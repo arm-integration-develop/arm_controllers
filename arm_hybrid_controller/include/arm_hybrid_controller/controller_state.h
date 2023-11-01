@@ -86,9 +86,18 @@ public:
             current_state_.velocity[i] = jnt_state[i].getVelocity();
         }
     }
+    void updateErrorState()
+    {
+        for (int i = 0; i < num_hw_joints_; ++i)
+        {
+            state_error_.position[i] = desired_state_.position[i] - current_state_.position[i];
+            state_error_.velocity[i] = desired_state_.velocity[i] - current_state_.velocity[i];
+        }
+    }
     void update(const ros::Time& time,const std::vector<hardware_interface::JointStateHandle> jnt_state)
     {
         updateCurrentState(jnt_state);
+        updateErrorState();
         publishState(time);
     }
     void publishState(const ros::Time& time)
