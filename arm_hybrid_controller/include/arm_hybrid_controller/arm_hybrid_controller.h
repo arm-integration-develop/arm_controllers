@@ -5,7 +5,6 @@
 #pragma once
 
 #include <dynamics_interface/dynamics_interface.h>
-#include <control_toolbox/pid.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -15,20 +14,13 @@
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
+
 #include <tools/lp_filter.h>
 #include <arm_hybrid_controller/controller_state.h>
+#include <arm_hybrid_controller/joints_interface.h>
 
 namespace arm_hybrid_controller
 {
-class Joint
-{
-public:
-    std::string name_;
-    double exe_effort_;
-    control_toolbox::Pid* position_pid_{};
-    effort_controllers::JointEffortController* effort_ctrl_;
-};
-
 class ArmHybridController
   : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
         hardware_interface::JointStateInterface>
@@ -49,7 +41,6 @@ private:
     void trajectory_teaching();
     void trajectory_tracking();
     void holding_position(const ros::Time& now);
-
     enum
     {
         GRAVITY_COMPENSATION,
@@ -60,10 +51,7 @@ private:
     int mode_ = GRAVITY_COMPENSATION;
     ros::Time last_time_;
     dynamics_interface::DynamicsInterface dynamics_interface_;
-    int num_hw_joints_;
-    std::vector<std::string> joint_names_{};
-    std::vector<hardware_interface::JointStateHandle> jnt_states_;
-    std::vector<Joint> joints_{};
+    JointsInterface joints_interface_;
     ControllerStateInterface controller_state_interface_{};
 };
 }// namespace arm_hybrid_controller
