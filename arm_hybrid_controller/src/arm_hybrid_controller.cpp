@@ -22,7 +22,8 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
 void ArmHybridController::starting(const ros::Time& time)
 {
     controller_state_interface_.initTimeData(time);
-    mode_ = GRAVITY_COMPENSATION;
+//    mode_ = GRAVITY_COMPENSATION;
+    mode_ = HOLDING_POSITION;
     controller_state_interface_.initDesiredState(joints_interface_.jnt_states_);
 }
 void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &period)
@@ -32,7 +33,9 @@ void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &
 void ArmHybridController::update(const ros::Time &time, const ros::Duration &period)
 {
     controller_state_interface_.updateTimeData(time,period);
-    switch (mode_) 
+    dynamics_interface_.pubDynamics();
+    controller_state_interface_.update(time,joints_interface_.jnt_states_);
+    switch (mode_)
     {
         case GRAVITY_COMPENSATION:
             gravity_compensation();
@@ -50,8 +53,6 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
     last_time_ = time;
     if(dynamics_interface_.send_tau_)
         moveJoint(time,period);
-    dynamics_interface_.pubDynamics();
-    controller_state_interface_.update(time,joints_interface_.jnt_states_);
 }
 void ArmHybridController::gravity_compensation()
 {
@@ -63,7 +64,9 @@ void ArmHybridController::gravity_compensation()
 void ArmHybridController::holding_position(const ros::Time& now)
 {
     for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
-        joints_interface_.joints_[i].exe_effort_ = joints_interface_.joints_[i].position_pid_->computeCommand(0.,now-last_time_);
+        double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],now-last_time_);
+        double cmd = position_pid_value;
+        joints_interface_.joints_[i].exe_effort_ = cmd;
     }
 }
 }// namespace arm_hybrid_controller
