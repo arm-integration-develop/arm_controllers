@@ -30,15 +30,33 @@ void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &
 {
     for (int i = 0; i < (int)joints_.size(); ++i) {
 //        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(tau_without_a_v_[i]);
-        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(dynamics_interface_.tau_(i));
+        joints_[i].effort_ctrl_->command_buffer_.writeFromNonRT(dynamics_interface_.tau_without_a_(i));
         joints_[i].effort_ctrl_->update(time,period);
     }
 }
 void ArmHybridController::update(const ros::Time &time, const ros::Duration &period)
 {
-    dynamics_interface_.computerInverseDynamics(jnt_states_);
+    switch (mode_) 
+    {
+        case GRAVITY_COMPENSATION:
+            gravity_compensation();
+            break;
+        case TRAJECTORY_TEACHING:
+            trajectory_teaching();
+            break;
+        case TRAJECTORY_TRACKING:
+            trajectory_tracking();
+            break;
+        case HOLDING_POSITION:
+            holding_position();
+            break;
+    }
     if(dynamics_interface_.send_tau_)
         moveJoint(time,period);
     dynamics_interface_.pubDynamics();
+}
+void ArmHybridController::gravity_compensation()
+{
+    dynamics_interface_.computerInverseDynamics(jnt_states_);
 }
 }// namespace arm_hybrid_controller

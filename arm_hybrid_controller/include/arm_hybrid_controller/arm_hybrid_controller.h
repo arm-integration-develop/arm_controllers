@@ -41,7 +41,19 @@ private:
     {
 //        cmd_rt_buffer_.writeFromNonRT(*msg);
     }
+    void gravity_compensation();
+    void trajectory_teaching();
+    void trajectory_tracking();
+    void holding_position();
 
+    enum
+    {
+        GRAVITY_COMPENSATION,
+        TRAJECTORY_TEACHING,
+        TRAJECTORY_TRACKING,
+        HOLDING_POSITION
+    };
+    int mode_ = GRAVITY_COMPENSATION;
     dynamics_interface::DynamicsInterface dynamics_interface_;
     ros::NodeHandle node_;
     int num_hw_joints_;
