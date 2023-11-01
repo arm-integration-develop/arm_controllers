@@ -18,7 +18,6 @@ namespace arm_hybrid_controller
 struct TimeData
 {
     TimeData() : time(0.0), period(0.0), uptime(0.0) {}
-
     ros::Time     time;   ///< Time of last update cycle
     ros::Duration period; ///< Period of last update cycle
     ros::Time     uptime; ///< Controller uptime. Set to zero at every restart.
@@ -53,6 +52,24 @@ public:
         state_publisher_->msg_.error.velocities.resize(num_hw_joints);
         state_publisher_->unlock();
     }
+    void initTimeData(const ros::Time& time)
+    {
+        // Update time data
+        TimeData time_data;
+        time_data.time  = time;
+        time_data.uptime = ros::Time(0.0);
+        time_data_.initRT(time_data);
+        last_state_publish_time_ = time_data.uptime;
+    }
+    void updateTimeData(const ros::Time& time,const ros::Duration& period)
+    {
+        old_time_data_ = *(time_data_.readFromRT());
+        TimeData time_data;
+        time_data.time   = time;                                     // Cache current time
+        time_data.period = period;                                   // Cache current control period
+        time_data.uptime = old_time_data_.uptime + period; // Update controller uptime
+        time_data_.writeFromNonRT(time_data);
+    }
     void publishState(const ros::Time& time)
     {
         // Check if it's time to publish
@@ -86,6 +103,7 @@ public:
     trajectory_interface::QuinticSplineSegment<double>::State state_joint_error_;
 
     ros::Duration state_publisher_period_;
+    TimeData old_time_data_;
     realtime_tools::RealtimeBuffer<TimeData> time_data_;
     ros::Time     last_state_publish_time_;
     std::unique_ptr<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>> state_publisher_;

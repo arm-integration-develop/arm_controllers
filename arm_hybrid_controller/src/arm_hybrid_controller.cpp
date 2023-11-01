@@ -15,7 +15,6 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     dynamics_interface_.init(nh_dynamics,num_hw_joints_);
     for (int i = 0; i < num_hw_joints_; i++)
         jnt_states_.push_back(robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(joint_names[i]));
-
     last_time_ = ros::Time::now();
     ros::NodeHandle nh_position_pids(controller_nh, "gains");
     ros::NodeHandle nh_joints(controller_nh, "joints");
@@ -34,6 +33,12 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     }
     return true;
 }
+
+void ArmHybridController::starting(const ros::Time& time)
+{
+    controller_state_interface_.initTimeData(time);
+    mode_ = GRAVITY_COMPENSATION;
+}
 void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &period)
 {
     for (int i = 0; i < (int)joints_.size(); ++i) {
@@ -43,6 +48,7 @@ void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &
 }
 void ArmHybridController::update(const ros::Time &time, const ros::Duration &period)
 {
+    controller_state_interface_.updateTimeData(time,period);
     switch (mode_) 
     {
         case GRAVITY_COMPENSATION:

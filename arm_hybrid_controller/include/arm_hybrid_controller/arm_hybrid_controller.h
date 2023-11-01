@@ -36,6 +36,7 @@ class ArmHybridController
 public:
     ArmHybridController() = default;
     bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh) override;
+    void starting(const ros::Time& time) override;
     void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
