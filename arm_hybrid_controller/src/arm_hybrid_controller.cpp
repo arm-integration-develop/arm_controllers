@@ -15,6 +15,13 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     ros::NodeHandle nh_dynamics(controller_nh, "dynamics");
     dynamics_interface_.init(nh_dynamics,joints_interface_.num_hw_joints_);
 
+    // Action Service
+    action_server_.reset(
+            new actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>(controller_nh, "follow_joint_trajectory",
+                             std::bind(&ArmHybridController::goalCB, this, std::placeholders::_1),
+                             std::bind(&ArmHybridController::cancelCB, this, std::placeholders::_1), false));
+    action_server_->start();
+
     last_time_ = ros::Time::now();
     return true;
 }
