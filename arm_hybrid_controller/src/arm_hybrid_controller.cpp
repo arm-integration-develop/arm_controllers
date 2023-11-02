@@ -8,7 +8,7 @@ namespace arm_hybrid_controller
 bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &controller_nh)
 {
     const std::vector<std::string>& joint_names = robot_hw->get<hardware_interface::JointStateInterface>()->getNames();
-
+    change_mode_server_ = controller_nh.advertiseService("change_hybrid_mode", &ArmHybridController::changeHybridMode, this);
     // Init controller_state_publisher
     controller_state_interface_.init(controller_nh,joint_names);
     joints_interface_.init(robot_hw,controller_nh);
@@ -19,6 +19,32 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     return true;
 }
 
+bool ArmHybridController::changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res)
+{
+    mode_ = static_cast<int>(req.new_mode);
+    std::string mode_string;
+    switch (mode_)
+    {
+        case GRAVITY_COMPENSATION:
+            mode_string = "GRAVITY_COMPENSATION";
+            break;
+        case TRAJECTORY_TEACHING:
+            mode_string = "TRAJECTORY_TEACHING";
+            break;
+        case TRAJECTORY_TRACKING:
+            mode_string = "TRAJECTORY_TRACKING";
+            break;
+        case HOLDING_POSITION:
+        {
+            mode_string = "HOLDING_POSITION";
+            controller_state_interface_.initDesiredState(joints_interface_.jnt_states_);
+        }
+        break;
+    }
+    res.reply = "Now the mode is:"+ mode_string;
+    ROS_INFO_STREAM(res.reply);
+    return true;
+}
 void ArmHybridController::starting(const ros::Time& time)
 {
     controller_state_interface_.initTimeData(time);

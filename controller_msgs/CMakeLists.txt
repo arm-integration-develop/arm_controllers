@@ -11,17 +11,18 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_service_files(
         FILES
+        ChangeHybridMode.srv
 
 )
 
-add_message_files(
-        FILES
-
-)
-
-add_action_files(
-        FILES
-)
+#add_message_files(
+#        FILES
+#
+#)
+#
+#add_action_files(
+#        FILES
+#)
 # Generate added messages and services with any dependencies listed here
 generate_messages(
         DEPENDENCIES
