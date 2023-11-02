@@ -58,7 +58,7 @@ private:
     void holding_position(const ros::Time& now);
 
     // Action function
-    void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh,ros::NodeHandle &controller_nh)
+    void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
     {
         gh.getGoal();
 

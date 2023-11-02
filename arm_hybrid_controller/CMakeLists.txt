@@ -48,7 +48,6 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/${PROJECT_NAME}.cpp
-        src/dynamics_interface.cpp
         include/dynamics_interface/dynamics_interface.h
         include/trajectory_interface/pos_vel_acc_state.h
         include/trajectory_interface/quintic_spline_segment.h
