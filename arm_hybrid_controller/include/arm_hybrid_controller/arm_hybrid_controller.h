@@ -61,7 +61,6 @@ private:
     void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
     {
         gh.getGoal();
-
     }
     void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
     {

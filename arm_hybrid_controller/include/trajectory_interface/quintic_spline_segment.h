@@ -20,6 +20,23 @@ public:
     {
         init(start_time, start_state, end_time, end_state);
     }
+    void sample(const double & time, PosVelAccState<double>& state) const
+    {
+        // Resize state data. Should be a no-op if appropriately sized
+        state.position.resize(coefs_.size());
+        state.velocity.resize(coefs_.size());
+        state.acceleration.resize(coefs_.size());
+
+        // Sample each dimension
+        typedef typename std::vector<SplineCoefficients>::const_iterator ConstIterator;
+        for(ConstIterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+        {
+            const typename std::vector<double>::size_type id = std::distance(coefs_.begin(), coefs_it);
+            sampleWithTimeBounds(*coefs_it,
+                                 duration_, (time - start_time_),
+                                 state.position[id], state.velocity[id], state.acceleration[id]);
+        }
+    }
 private:
     typedef std::array<double, 6> SplineCoefficients;
     std::vector<SplineCoefficients> coefs_;
@@ -51,6 +68,11 @@ private:
                                     const double& end_pos,   const double& end_vel,   const double& end_acc,
                                     const double& time,
                                     SplineCoefficients& coefficients);
+    static void sample(const SplineCoefficients& coefficients, const double & time,
+                       double & position, double & velocity, double & acceleration);
+
+    static void sampleWithTimeBounds(const SplineCoefficients& coefficients, const double & duration, const double & time,
+                                     double & position, double & velocity, double & acceleration);
 };
 
 void QuinticSplineSegment::init(const double &  start_time,
@@ -189,6 +211,55 @@ void QuinticSplineSegment::computeCoefficients(const double& start_pos, const do
                            16.0*start_vel*T[1] + 14.0*end_vel*T[1]) / (2.0*T[4]);
         coefficients[5] = (-12.0*start_pos + 12.0*end_pos - start_acc*T[2] + end_acc*T[2] -
                            6.0*start_vel*T[1] - 6.0*end_vel*T[1]) / (2.0*T[5]);
+    }
+}
+void QuinticSplineSegment::sample(const SplineCoefficients& coefficients, const double & time,
+       double & position, double & velocity, double & acceleration)
+{
+    // create powers of time:
+    double t[6];
+    generatePowers(5, time, t);
+
+    position = t[0]*coefficients[0] +
+               t[1]*coefficients[1] +
+               t[2]*coefficients[2] +
+               t[3]*coefficients[3] +
+               t[4]*coefficients[4] +
+               t[5]*coefficients[5];
+
+    velocity = t[0]*coefficients[1] +
+               2.0*t[1]*coefficients[2] +
+               3.0*t[2]*coefficients[3] +
+               4.0*t[3]*coefficients[4] +
+               5.0*t[4]*coefficients[5];
+
+    acceleration = 2.0*t[0]*coefficients[2] +
+                   6.0*t[1]*coefficients[3] +
+                   12.0*t[2]*coefficients[4] +
+                   20.0*t[3]*coefficients[5];
+}
+
+void QuinticSplineSegment::sampleWithTimeBounds(const SplineCoefficients& coefficients, const double & duration, const double & time,
+                     double & position, double & velocity, double & acceleration)
+{
+    if (time < 0)
+    {
+        double _;
+        sample(coefficients, 0.0, position, _, _);
+        velocity = 0;
+        acceleration = 0;
+    }
+    else if (time > duration)
+    {
+        double _;
+        sample(coefficients, duration, position, _, _);
+        velocity = 0;
+        acceleration = 0;
+    }
+    else
+    {
+        sample(coefficients, time,
+               position, velocity, acceleration);
     }
 }
 

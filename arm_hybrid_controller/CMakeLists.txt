@@ -105,6 +105,10 @@ install(
 add_executable(test_pinocchio
         test/test_pinocchio.cpp)
 target_link_libraries(test_pinocchio pinocchio::pinocchio)
+
+add_executable(test_quintic_spline_segment
+        test/test_quintic_spline_segment.cpp)
+target_link_libraries(test_quintic_spline_segment ${catkin_LIBRARIES})
 #if (${CATKIN_ENABLE_TESTING})
 #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 #  ## Add gtest based cpp test target and link libraries
