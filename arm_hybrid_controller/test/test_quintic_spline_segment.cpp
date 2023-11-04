@@ -25,8 +25,8 @@ int main(int argc, char** argv)
     end_state.position = {10};
     end_state.velocity = {0};
     end_state.acceleration = {0};
-    trajectory_interface::QuinticSplineSegment TestQuinticSplineSegment(0.,start_state,10,end_state);
-    trajectory_interface::QuinticSplineSegment ContrastTestQuinticSplineSegment(0.,start_state,5,end_state);
+    trajectory_interface::QuinticSplineSegment<double> TestQuinticSplineSegment(0.,start_state,10,end_state);
+    trajectory_interface::QuinticSplineSegment<double> ContrastTestQuinticSplineSegment(0.,start_state,5,end_state);
     double state_time = ros::Time::now().toSec();
 
     while (ros::ok())

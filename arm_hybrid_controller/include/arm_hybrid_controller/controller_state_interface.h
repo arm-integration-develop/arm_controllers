@@ -11,7 +11,7 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
-#include <trajectory_interface/quintic_spline_segment_old.h>
+#include <trajectory_interface/quintic_spline_segment.h>
 #include <hardware_interface/joint_state_interface.h>
 #pragma once
 namespace arm_hybrid_controller
