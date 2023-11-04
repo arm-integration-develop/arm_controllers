@@ -13,6 +13,8 @@
 
 #include <trajectory_interface/quintic_spline_segment.h>
 #include <hardware_interface/joint_state_interface.h>
+#include <trajectory_interface/trajectory_interface.h>
+#include <trajectory_interface/joint_trajectory_segment.h>
 #pragma once
 namespace arm_hybrid_controller
 {
@@ -35,12 +37,12 @@ public:
 
         // Preeallocate resources
         num_hw_joints_ = static_cast<int>(joint_names.size());
-        current_state_       = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
-        old_desired_state_   = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
-        desired_state_       = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
-        state_error_         = trajectory_interface::QuinticSplineSegment<double>::State(num_hw_joints_);
-        desired_joint_state_ = trajectory_interface::QuinticSplineSegment<double>::State(1);
-        state_joint_error_   = trajectory_interface::QuinticSplineSegment<double>::State(1);
+        current_state_       = Segment::State(num_hw_joints_);
+        old_desired_state_   = Segment::State(num_hw_joints_);
+        desired_state_       = Segment::State(num_hw_joints_);
+        state_error_         = Segment::State(num_hw_joints_);
+        desired_joint_state_ = Segment::State(1);
+        state_joint_error_   = Segment::State(1);
 
         state_publisher_->lock();
         state_publisher_->msg_.joint_names = joint_names;
@@ -95,6 +97,32 @@ public:
             state_error_.velocity[i] = desired_state_.velocity[i] - current_state_.velocity[i];
         }
     }
+
+    template<class Trajectory>
+    void updateDesiredStates(const ros::Time& sample_time, const Trajectory* const traj)
+    {
+        old_desired_state_ = desired_state_;
+        for (int joint_index = 0; joint_index < num_hw_joints_; ++joint_index)
+        {
+            const auto segment = trajectory_interface::sample( (*traj)[joint_index], sample_time.toSec(), desired_joint_state_);
+            
+            desired_state_.position[joint_index] = desired_joint_state_.position[0];
+            desired_state_.velocity[joint_index] = desired_joint_state_.velocity[0];
+            desired_state_.acceleration[joint_index] = desired_joint_state_.acceleration[0];
+
+            state_error_.position[joint_index] = desired_joint_state_.position[0] - current_state_.position[joint_index];
+            state_error_.velocity[joint_index] = desired_joint_state_.velocity[0] - current_state_.velocity[joint_index];
+            state_error_.acceleration[joint_index] = 0.0;
+
+            if (joint_index == 0)
+            {
+                const auto time_from_start = segment->timeFromStart();
+                current_state_.time_from_start = sample_time.toSec() - segment->startTime() + time_from_start;
+                desired_state_.time_from_start = time_from_start;
+                state_error_.time_from_start = desired_state_.time_from_start - current_state_.time_from_start;
+            }
+        }
+    }
     void update(const ros::Time& time,const std::vector<hardware_interface::JointStateHandle> jnt_state)
     {
         updateCurrentState(jnt_state);
@@ -126,12 +154,13 @@ public:
             }
         }
     }
-    trajectory_interface::QuinticSplineSegment<double>::State current_state_;
-    trajectory_interface::QuinticSplineSegment<double>::State desired_state_;
-    trajectory_interface::QuinticSplineSegment<double>::State old_desired_state_;
-    trajectory_interface::QuinticSplineSegment<double>::State state_error_;
-    trajectory_interface::QuinticSplineSegment<double>::State desired_joint_state_;
-    trajectory_interface::QuinticSplineSegment<double>::State state_joint_error_;
+    typedef joint_trajectory_controller::JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double>> Segment;
+    Segment::State current_state_;
+    Segment::State desired_state_;
+    Segment::State old_desired_state_;
+    Segment::State state_error_;
+    Segment::State desired_joint_state_;
+    Segment::State state_joint_error_;
 
     int num_hw_joints_;
     ros::Duration state_publisher_period_;

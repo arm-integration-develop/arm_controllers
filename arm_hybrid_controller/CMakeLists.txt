@@ -49,6 +49,9 @@ include_directories(
 add_library(${PROJECT_NAME}
         src/${PROJECT_NAME}.cpp
         include/dynamics_interface/dynamics_interface.h
+        include/arm_hybrid_controller/controller_state_interface.h
+        include/arm_hybrid_controller/joints_interface.h
+
         include/trajectory_interface/pos_vel_acc_state.h
         include/trajectory_interface/quintic_spline_segment.h
         include/trajectory_interface/trajectory_interface.h

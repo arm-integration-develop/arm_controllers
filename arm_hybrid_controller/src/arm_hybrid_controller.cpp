@@ -7,17 +7,18 @@ namespace arm_hybrid_controller
 {
 bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &controller_nh)
 {
+    controller_nh_ = controller_nh;
     const std::vector<std::string>& joint_names = robot_hw->get<hardware_interface::JointStateInterface>()->getNames();
-    change_mode_server_ = controller_nh.advertiseService("change_hybrid_mode", &ArmHybridController::changeHybridMode, this);
+    change_mode_server_ = controller_nh_.advertiseService("change_hybrid_mode", &ArmHybridController::changeHybridMode, this);
     // Init controller_state_publisher
-    controller_state_interface_.init(controller_nh,joint_names);
-    joints_interface_.init(robot_hw,controller_nh);
-    ros::NodeHandle nh_dynamics(controller_nh, "dynamics");
+    controller_state_interface_.init(controller_nh_,joint_names);
+    joints_interface_.init(robot_hw,controller_nh_);
+    ros::NodeHandle nh_dynamics(controller_nh_, "dynamics");
     dynamics_interface_.init(nh_dynamics,joints_interface_.num_hw_joints_);
 
     // Action Service
     action_server_.reset(
-            new actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>(controller_nh, "follow_joint_trajectory",
+            new actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>(controller_nh_, "follow_joint_trajectory",
                              std::bind(&ArmHybridController::goalCB, this, std::placeholders::_1),
                              std::bind(&ArmHybridController::cancelCB, this, std::placeholders::_1), false));
     action_server_->start();
@@ -102,19 +103,28 @@ void ArmHybridController::holding_position(const ros::Time& now)
         joints_interface_.joints_[i].exe_effort_ = cmd;
     }
 }
-void ArmHybridController::trajectory_tracking(const ros::Time& now, const ros::Duration& period) {
+void ArmHybridController::trajectory_tracking(const ros::Time& time, const ros::Duration& period) {
     // Get currently followed trajectory
     TrajectoryPtr curr_traj_ptr;
-    curr_trajectory_box_.get(curr_traj_ptr);
-    Trajectory& curr_traj = *curr_traj_ptr;
+//    curr_trajectory_box_.get(curr_traj_ptr);
+//    Trajectory& curr_traj = *curr_traj_ptr;
 
+    controller_state_interface_.old_time_data_ = *(controller_state_interface_.time_data_.readFromRT());
+    // Update time data
+    TimeData time_data;
+    time_data.time   = time;                                     // Cache current time
+    time_data.period = period;                                   // Cache current control period
+    time_data.uptime = controller_state_interface_.old_time_data_.uptime + period; // Update controller uptime
+    controller_state_interface_.time_data_.writeFromNonRT(time_data);
+
+    controller_state_interface_.updateDesiredStates<Trajectory>(time_data.uptime, curr_traj_ptr.get());
     int points_size = static_cast<int>(points_.size());
     if (point_current_<(points_size-1))
     {
-        ROS_INFO_STREAM("now"<<now-new_gl_time_);
+        ROS_INFO_STREAM("now"<<time-new_gl_time_);
         ROS_INFO_STREAM("points"<<points_[point_current_].time_from_start);
     }
-    if (now-new_gl_time_ > points_[point_current_].time_from_start && point_current_<(points_size-1))
+    if (time-new_gl_time_ > points_[point_current_].time_from_start && point_current_<(points_size-1))
     {
         for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
             controller_state_interface_.desired_state_.position[i] = points_[point_current_].positions[i];
@@ -125,9 +135,57 @@ void ArmHybridController::trajectory_tracking(const ros::Time& now, const ros::D
         ROS_INFO_STREAM(point_current_);
     }
     for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
-        double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],now-last_time_);
+        double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],time-last_time_);
         double cmd = position_pid_value;
         joints_interface_.joints_[i].exe_effort_ = cmd;
+    }
+}
+void ArmHybridController::preemptActiveGoal()
+{
+    RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+
+    // Cancels the currently active goal
+    if (current_active_goal)
+    {
+        // Marks the current goal as canceled
+        rt_active_goal_.reset();
+        current_active_goal->gh_.setCanceled();
+    }
+}
+
+void ArmHybridController::goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
+{
+    mode_ = TRAJECTORY_TRACKING;
+//        Use for test trajectory without segment
+    point_current_ = 0;
+    points_ = gh.getGoal()->trajectory.points;
+    new_gl_time_ = ros::Time::now();
+    ROS_INFO_STREAM(mode_);
+//        Use for test trajectory without segment
+    RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
+    std::string error_string;
+    const bool update_ok = true;
+//    const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),
+//                                                   rt_goal,
+//                                                   &error_string);
+    rt_goal->preallocated_feedback_->joint_names = joints_interface_.joint_names_;
+    if (update_ok)
+    {
+        // Accept new goal
+        preemptActiveGoal();
+        gh.setAccepted();
+        rt_active_goal_ = rt_goal;
+        // Setup goal status checking timer
+        goal_handle_timer_ = controller_nh_.createTimer(action_monitor_period_,&RealtimeGoalHandle::runNonRealtime,rt_goal);
+        goal_handle_timer_.start();
+    }
+    else
+    {
+        // Reject invalid goal
+        control_msgs::FollowJointTrajectoryResult result;
+        result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
+        result.error_string = error_string;
+        gh.setRejected(result);
     }
 }
 }// namespace arm_hybrid_controller

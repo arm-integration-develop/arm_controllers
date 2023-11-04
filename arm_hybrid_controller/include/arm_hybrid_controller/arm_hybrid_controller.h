@@ -78,18 +78,12 @@ private:
     void holding_position(const ros::Time& now);
 
     // Action function
-    void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
-    {
-        mode_ = TRAJECTORY_TRACKING;
-        point_current_ = 0;
-        points_ = gh.getGoal()->trajectory.points;
-        new_gl_time_ = ros::Time::now();
-        ROS_INFO_STREAM(mode_);
-    }
+    void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh);
     void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
     {
         ROS_INFO_STREAM(gh.getGoalID());
     }
+    void preemptActiveGoal();
     enum
     {
         GRAVITY_COMPENSATION,
@@ -105,6 +99,7 @@ private:
 
     ros::ServiceServer change_mode_server_;
     ros::Duration action_monitor_period_;
+    ros::NodeHandle    controller_nh_;
     std::shared_ptr<actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>> action_server_;
 
     int point_current_=0;
@@ -112,6 +107,10 @@ private:
     dynamics_interface::DynamicsInterface dynamics_interface_;
     JointsInterface joints_interface_;
     ControllerStateInterface controller_state_interface_{};
+    joint_trajectory_controller::SegmentTolerances<double> default_tolerances_; ///< Default trajectory segment tolerances.
+
+    RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
+    TrajectoryBox curr_trajectory_box_;
 };
 }// namespace arm_hybrid_controller
 
