@@ -77,7 +77,7 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
             trajectory_teaching();
             break;
         case TRAJECTORY_TRACKING:
-            trajectory_tracking();
+            trajectory_tracking(time);
             break;
         case HOLDING_POSITION:
             holding_position(time);
@@ -96,6 +96,29 @@ void ArmHybridController::gravity_compensation()
 }
 void ArmHybridController::holding_position(const ros::Time& now)
 {
+    for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
+        double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],now-last_time_);
+        double cmd = position_pid_value;
+        joints_interface_.joints_[i].exe_effort_ = cmd;
+    }
+}
+void ArmHybridController::trajectory_tracking(const ros::Time& now) {
+    int points_size = static_cast<int>(points_.size());
+    if (point_current_<(points_size-1))
+    {
+        ROS_INFO_STREAM("now"<<now-new_gl_time_);
+        ROS_INFO_STREAM("points"<<points_[point_current_].time_from_start);
+    }
+    if (now-new_gl_time_ > points_[point_current_].time_from_start && point_current_<(points_size-1))
+    {
+        for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
+            controller_state_interface_.desired_state_.position[i] = points_[point_current_].positions[i];
+            controller_state_interface_.desired_state_.velocity[i] = points_[point_current_].velocities[i];
+            controller_state_interface_.desired_state_.acceleration[i] = points_[point_current_].accelerations[i];
+        }
+        point_current_++;
+        ROS_INFO_STREAM(point_current_);
+    }
     for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
         double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],now-last_time_);
         double cmd = position_pid_value;

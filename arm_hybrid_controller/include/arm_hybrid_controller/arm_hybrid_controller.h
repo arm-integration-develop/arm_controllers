@@ -22,6 +22,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <controller_msgs/ChangeHybridMode.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
 
 // actionlib
 #include <actionlib/server/action_server.h>
@@ -54,13 +55,17 @@ private:
     bool changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res);
     void gravity_compensation();
     void trajectory_teaching();
-    void trajectory_tracking();
+    void trajectory_tracking(const ros::Time& now);
     void holding_position(const ros::Time& now);
 
     // Action function
     void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
     {
-        gh.getGoal();
+        mode_ = TRAJECTORY_TRACKING;
+        point_current_ = 0;
+        points_ = gh.getGoal()->trajectory.points;
+        new_gl_time_ = ros::Time::now();
+        ROS_INFO_STREAM(mode_);
     }
     void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
     {
@@ -77,11 +82,14 @@ private:
     int mode_;
     ros::Time last_time_;
     ros::Timer goal_handle_timer_;
+    ros::Time new_gl_time_;
 
     ros::ServiceServer change_mode_server_;
     ros::Duration action_monitor_period_;
     std::shared_ptr<actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>> action_server_;
 
+    int point_current_=0;
+    std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
     dynamics_interface::DynamicsInterface dynamics_interface_;
     JointsInterface joints_interface_;
     ControllerStateInterface controller_state_interface_{};
