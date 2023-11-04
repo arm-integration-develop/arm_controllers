@@ -31,6 +31,8 @@
 #include <tools/lp_filter.h>
 #include <arm_hybrid_controller/controller_state_interface.h>
 #include <arm_hybrid_controller/joints_interface.h>
+#include <trajectory_interface/quintic_spline_segment.h>
+#include <trajectory_interface/joint_trajectory_segment.h>
 
 // realtime_tools
 #include <realtime_tools/realtime_server_goal_handle.h>
@@ -47,6 +49,23 @@ public:
     void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
+    typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
+    typedef std::shared_ptr<ActionServer>                                                       ActionServerPtr;
+    typedef ActionServer::GoalHandle                                                            GoalHandle;
+    typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
+    typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+    typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
+    typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>     StatePublisher;
+    typedef std::unique_ptr<StatePublisher>                                                     StatePublisherPtr;
+
+    typedef joint_trajectory_controller::JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double>>          Segment;
+    typedef std::vector<Segment>                                                                TrajectoryPerJoint;
+    typedef std::vector<TrajectoryPerJoint>                                                     Trajectory;
+    typedef std::shared_ptr<Trajectory>                                                         TrajectoryPtr;
+    typedef std::shared_ptr<TrajectoryPerJoint>                                                 TrajectoryPerJointPtr;
+    typedef realtime_tools::RealtimeBox<TrajectoryPtr>                                          TrajectoryBox;
+    typedef typename Segment::Scalar                                                            Scalar;
+
     void moveJoint(const ros::Time& time, const ros::Duration& period);
     void commandCB(const geometry_msgs::PointStampedConstPtr & msg)
     {
@@ -55,7 +74,7 @@ private:
     bool changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res);
     void gravity_compensation();
     void trajectory_teaching();
-    void trajectory_tracking(const ros::Time& now);
+    void trajectory_tracking(const ros::Time& now,const ros::Duration& period);
     void holding_position(const ros::Time& now);
 
     // Action function

@@ -77,7 +77,7 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
             trajectory_teaching();
             break;
         case TRAJECTORY_TRACKING:
-            trajectory_tracking(time);
+            trajectory_tracking(time,period);
             break;
         case HOLDING_POSITION:
             holding_position(time);
@@ -102,7 +102,12 @@ void ArmHybridController::holding_position(const ros::Time& now)
         joints_interface_.joints_[i].exe_effort_ = cmd;
     }
 }
-void ArmHybridController::trajectory_tracking(const ros::Time& now) {
+void ArmHybridController::trajectory_tracking(const ros::Time& now, const ros::Duration& period) {
+    // Get currently followed trajectory
+    TrajectoryPtr curr_traj_ptr;
+    curr_trajectory_box_.get(curr_traj_ptr);
+    Trajectory& curr_traj = *curr_traj_ptr;
+
     int points_size = static_cast<int>(points_.size());
     if (point_current_<(points_size-1))
     {
