@@ -55,9 +55,11 @@ add_library(${PROJECT_NAME}
         include/trajectory_interface/pos_vel_acc_state.h
         include/trajectory_interface/quintic_spline_segment.h
         include/trajectory_interface/trajectory_interface.h
+
         include/joint_trajectory_interface/joint_trajectory_segment.h
         include/joint_trajectory_interface/tolerances.h
         include/joint_trajectory_interface/joint_trajectory_msg_utils.h
+        include/joint_trajectory_interface/init_joint_trajectory.h
         )
 
 target_link_libraries(${PROJECT_NAME}
