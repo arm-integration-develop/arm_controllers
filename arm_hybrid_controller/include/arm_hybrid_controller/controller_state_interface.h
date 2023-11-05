@@ -13,7 +13,7 @@
 
 #include <trajectory_interface/quintic_spline_segment.h>
 #include <hardware_interface/joint_state_interface.h>
-#include "joint_trajectory_interface/trajectory_interface.h"
+#include "trajectory_interface/trajectory_interface.h"
 #include "joint_trajectory_interface/joint_trajectory_segment.h"
 #pragma once
 namespace arm_hybrid_controller

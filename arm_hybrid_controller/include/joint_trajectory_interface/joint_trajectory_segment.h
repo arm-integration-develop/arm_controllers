@@ -48,7 +48,7 @@
 
 // Project
 #include "joint_trajectory_msg_utils.h"
-#include "trajectory_interface/tolerances.h"
+#include "tolerances.h"
 
 namespace joint_trajectory_controller
 {
