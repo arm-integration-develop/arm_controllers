@@ -39,7 +39,7 @@
 #include <ros/time.h>
 #include <trajectory_msgs/JointTrajectory.h>
 
-#include <trajectory_interface/trajectory_interface.h>
+#include "trajectory_interface.h"
 
 namespace joint_trajectory_controller
 {

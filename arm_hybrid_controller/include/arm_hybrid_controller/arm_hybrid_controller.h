@@ -32,7 +32,7 @@
 #include <arm_hybrid_controller/controller_state_interface.h>
 #include <arm_hybrid_controller/joints_interface.h>
 #include <trajectory_interface/quintic_spline_segment.h>
-#include <trajectory_interface/joint_trajectory_segment.h>
+#include "joint_trajectory_interface/joint_trajectory_segment.h"
 
 // realtime_tools
 #include <realtime_tools/realtime_server_goal_handle.h>
