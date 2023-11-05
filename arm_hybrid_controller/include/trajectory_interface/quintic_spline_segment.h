@@ -30,7 +30,7 @@
 
 #pragma once
 
-
+#include <ros/ros.h>
 #include <array>
 #include <iterator>
 #include <stdexcept>
@@ -187,6 +187,7 @@ void QuinticSplineSegment<ScalarType>::init(const Time&  start_time,
                                             const Time&  end_time,
                                             const State& end_state)
 {
+    ROS_INFO_STREAM("Segment time:"<< start_time);
     // Preconditions
     if (end_time < start_time)
     {

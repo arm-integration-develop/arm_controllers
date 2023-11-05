@@ -105,7 +105,7 @@ public:
         for (int joint_index = 0; joint_index < num_hw_joints_; ++joint_index)
         {
             const auto segment = trajectory_interface::sample( (*traj)[joint_index], sample_time.toSec(), desired_joint_state_);
-            
+
             desired_state_.position[joint_index] = desired_joint_state_.position[0];
             desired_state_.velocity[joint_index] = desired_joint_state_.velocity[0];
             desired_state_.acceleration[joint_index] = desired_joint_state_.acceleration[0];
@@ -126,7 +126,6 @@ public:
     void update(const ros::Time& time,const std::vector<hardware_interface::JointStateHandle> jnt_state)
     {
         updateCurrentState(jnt_state);
-        updateErrorState();
         publishState(time);
     }
     void publishState(const ros::Time& time)

@@ -32,12 +32,21 @@
 #include <arm_hybrid_controller/controller_state_interface.h>
 #include <arm_hybrid_controller/joints_interface.h>
 #include <trajectory_interface/quintic_spline_segment.h>
-#include "joint_trajectory_interface/joint_trajectory_segment.h"
+#include <joint_trajectory_interface/init_joint_trajectory.h>
+#include <joint_trajectory_interface/creat_joint_trajectory.h>
 
 // realtime_tools
 #include <realtime_tools/realtime_server_goal_handle.h>
 namespace arm_hybrid_controller
 {
+namespace internal {
+    template<class Enclosure, class Member>
+    inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclosure, Member &member) {
+        actionlib::EnclosureDeleter<Enclosure> d(enclosure);
+        boost::shared_ptr<Member> p(&member, d);
+        return p;
+    }
+}
 class ArmHybridController
   : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
         hardware_interface::JointStateInterface>
@@ -76,6 +85,11 @@ private:
     void trajectory_teaching();
     void trajectory_tracking(const ros::Time& now,const ros::Duration& period);
     void holding_position(const ros::Time& now);
+    bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string);
+    void updateFuncExtensionPoint(const Trajectory& curr_traj, const TimeData& time_data)
+    {
+        // To be implemented by derived class
+    }
 
     // Action function
     void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh);
@@ -93,6 +107,8 @@ private:
     };
 
     int mode_;
+    bool is_enter_cb_= false;
+    std::string name_;
     ros::Time last_time_;
     ros::Timer goal_handle_timer_;
     ros::Time new_gl_time_;
@@ -102,11 +118,13 @@ private:
     ros::NodeHandle    controller_nh_;
     std::shared_ptr<actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>> action_server_;
 
-    int point_current_=0;
+//    int point_current_=0;
     std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
     dynamics_interface::DynamicsInterface dynamics_interface_;
     JointsInterface joints_interface_;
     ControllerStateInterface controller_state_interface_{};
+    std::vector<std::string> joint_names_;
+    int num_hw_joints_;
     joint_trajectory_controller::SegmentTolerances<double> default_tolerances_; ///< Default trajectory segment tolerances.
 
     RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.

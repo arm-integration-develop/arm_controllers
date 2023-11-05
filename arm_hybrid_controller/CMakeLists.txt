@@ -60,6 +60,7 @@ add_library(${PROJECT_NAME}
         include/joint_trajectory_interface/tolerances.h
         include/joint_trajectory_interface/joint_trajectory_msg_utils.h
         include/joint_trajectory_interface/init_joint_trajectory.h
+        include/joint_trajectory_interface/creat_joint_trajectory.h
         )
 
 target_link_libraries(${PROJECT_NAME}

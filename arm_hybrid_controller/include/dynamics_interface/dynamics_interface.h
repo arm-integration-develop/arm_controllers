@@ -69,9 +69,8 @@ bool DynamicsInterface::init(ros::NodeHandle &dynamics_nh)
     }
     else
         dynamics_nh.getParam("num_hw_joints",num_hw_joints_);
-
 //  Init the dynamics relative var.
-    zero_.resize(num_hw_joints_,0.);
+    zero_.resize(num_hw_joints_);
     tau_.resize(num_hw_joints_);
     tau_without_a_.resize(num_hw_joints_);
     tau_without_a_v_.resize(num_hw_joints_);
@@ -115,6 +114,7 @@ void DynamicsInterface::computerInverseDynamics(std::vector<hardware_interface::
         a_lp_filter_->input(original_a);
         a_(i) = a_lp_filter_->output();
         last_v_[i] = v_(i);
+        zero_(i) = 0.;
     }
     last_time_ = ros::Time::now();
 //  Use RNEA to computer inverse dynamics
