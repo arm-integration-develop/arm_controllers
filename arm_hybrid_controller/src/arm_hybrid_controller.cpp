@@ -14,7 +14,7 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     controller_state_interface_.init(controller_nh_,joint_names);
     joints_interface_.init(robot_hw,controller_nh_);
     ros::NodeHandle nh_dynamics(controller_nh_, "dynamics");
-    dynamics_interface_.init(nh_dynamics,joints_interface_.num_hw_joints_);
+    dynamics_interface_.init(nh_dynamics);
 
     // Action Service
     action_server_.reset(
