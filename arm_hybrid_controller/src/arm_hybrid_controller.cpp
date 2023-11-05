@@ -128,6 +128,7 @@ void ArmHybridController::trajectory_tracking(const ros::Time& time, const ros::
     else
     {
         Trajectory& curr_traj = *curr_traj_ptr;
+
         controller_state_interface_.old_time_data_ = *(controller_state_interface_.time_data_.readFromRT());
         // Update time data
         TimeData time_data;
@@ -136,13 +137,14 @@ void ArmHybridController::trajectory_tracking(const ros::Time& time, const ros::
         time_data.uptime = controller_state_interface_.old_time_data_.uptime + period; // Update controller uptime
         controller_state_interface_.time_data_.writeFromNonRT(time_data);
 
-        controller_state_interface_.updateDesiredStates<Trajectory>(time_data.uptime, curr_traj_ptr.get());
+        controller_state_interface_.updateDesiredStates<Trajectory>(trajectory_points_time_, curr_traj_ptr.get());
         for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
             double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],time-last_time_);
             double cmd = position_pid_value;
             joints_interface_.joints_[i].exe_effort_ = cmd;
         }
         ArmHybridController::updateFuncExtensionPoint(curr_traj, time_data);
+        trajectory_points_time_+=period;
     }
 }
 void ArmHybridController::preemptActiveGoal()
@@ -220,7 +222,8 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
     try
     {
         TrajectoryPtr traj_ptr(new Trajectory);
-        *traj_ptr = creatJointTrajectory<Trajectory>(*msg, next_update_time,err_string);
+        *traj_ptr = joint_trajectory_controller::initJointTrajectory<Trajectory>(*msg, next_update_time);
+        trajectory_points_time_ = msg.get()->header.stamp.now();
         if (!traj_ptr->empty())
         {
             curr_trajectory_box_.set(traj_ptr);

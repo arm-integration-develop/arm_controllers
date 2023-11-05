@@ -112,6 +112,7 @@ private:
     ros::Time last_time_;
     ros::Timer goal_handle_timer_;
     ros::Time new_gl_time_;
+    ros::Time trajectory_points_time_;
 
     ros::ServiceServer change_mode_server_;
     ros::Duration action_monitor_period_;

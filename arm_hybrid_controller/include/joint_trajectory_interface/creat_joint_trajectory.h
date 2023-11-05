@@ -110,9 +110,7 @@ namespace arm_hybrid_controller {
                     next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);
                 }
                 next_it_point_per_joint.time_from_start = next_it->time_from_start;
-                ROS_INFO_STREAM("joint:"<< msg_joint_it);
                 Segment segment(msg_start_time, it_point_per_joint, next_it_point_per_joint);
-                ROS_INFO_STREAM("~~~~~~~~~~~~~");
 //            segment.setGoalHandle(options.rt_goal_handle);
                 result_traj_per_joint.push_back(segment);
                 ++it;
