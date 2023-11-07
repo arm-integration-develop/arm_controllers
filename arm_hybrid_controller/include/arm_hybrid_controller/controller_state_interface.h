@@ -126,6 +126,7 @@ public:
     void update(const ros::Time& time,const std::vector<hardware_interface::JointStateHandle> jnt_state)
     {
         updateCurrentState(jnt_state);
+        updateErrorState();
         publishState(time);
     }
     void publishState(const ros::Time& time)

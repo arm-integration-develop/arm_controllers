@@ -81,6 +81,7 @@ private:
 //        cmd_rt_buffer_.writeFromNonRT(*msg);
     }
     bool changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res);
+    void changeMode(int mode);
     void gravity_compensation();
     void trajectory_teaching();
     void trajectory_tracking(const ros::Time& now,const ros::Duration& period);
@@ -107,7 +108,6 @@ private:
     };
 
     int mode_;
-    bool is_enter_cb_= false;
     std::string name_;
     ros::Time last_time_;
     ros::Timer goal_handle_timer_;

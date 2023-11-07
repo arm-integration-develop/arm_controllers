@@ -35,9 +35,9 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     return true;
 }
 
-bool ArmHybridController::changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res)
+void ArmHybridController::changeMode(int mode)
 {
-    mode_ = static_cast<int>(req.new_mode);
+    mode_ = mode;
     std::string mode_string;
     switch (mode_)
     {
@@ -55,10 +55,15 @@ bool ArmHybridController::changeHybridMode(controller_msgs::ChangeHybridModeRequ
             mode_string = "HOLDING_POSITION";
             controller_state_interface_.initDesiredState(joints_interface_.jnt_states_);
         }
-        break;
+            break;
     }
-    res.reply = "Now the mode is:"+ mode_string;
-    ROS_INFO_STREAM(res.reply);
+    std::string reply = "Now the mode is:"+ mode_string;
+    ROS_INFO_STREAM(reply);
+}
+bool ArmHybridController::changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res)
+{
+    int mode = static_cast<int>(req.new_mode);
+    changeMode(mode);
     return true;
 }
 void ArmHybridController::starting(const ros::Time& time)
@@ -77,27 +82,24 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
     controller_state_interface_.updateTimeData(time,period);
     dynamics_interface_.pubDynamics();
     controller_state_interface_.update(time,joints_interface_.jnt_states_);
-    if (!is_enter_cb_)
+    switch (mode_)
     {
-        switch (mode_)
-        {
-            case GRAVITY_COMPENSATION:
-                gravity_compensation();
-                break;
-            case TRAJECTORY_TEACHING:
-                trajectory_teaching();
-                break;
-            case TRAJECTORY_TRACKING:
-                trajectory_tracking(time,period);
-                break;
-            case HOLDING_POSITION:
-                holding_position(time);
-                break;
-        }
-        last_time_ = time;
-        if(dynamics_interface_.send_tau_)
-            moveJoint(time,period);
+        case GRAVITY_COMPENSATION:
+            gravity_compensation();
+            break;
+        case TRAJECTORY_TEACHING:
+            trajectory_teaching();
+            break;
+        case TRAJECTORY_TRACKING:
+            trajectory_tracking(time,period);
+            break;
+        case HOLDING_POSITION:
+            holding_position(time);
+            break;
     }
+    last_time_ = time;
+    if(dynamics_interface_.send_tau_)
+        moveJoint(time,period);
 }
 void ArmHybridController::gravity_compensation()
 {
@@ -121,8 +123,7 @@ void ArmHybridController::trajectory_tracking(const ros::Time& time, const ros::
     if (curr_traj_ptr == nullptr)
     {
         ROS_INFO_STREAM("NO msg");
-        mode_ = HOLDING_POSITION;
-        controller_state_interface_.initDesiredState(joints_interface_.jnt_states_);
+        changeMode(HOLDING_POSITION);
     }
 //    // Curr_traj is use for computer tolerance.
     else
@@ -162,9 +163,7 @@ void ArmHybridController::preemptActiveGoal()
 
 void ArmHybridController::goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
 {
-    is_enter_cb_ = true;
     ROS_INFO_STREAM("goalCB");
-    mode_ = TRAJECTORY_TRACKING;
 //        Use for test trajectory without segment
 //    point_current_ = 0;
     points_ = gh.getGoal()->trajectory.points;
@@ -192,7 +191,6 @@ void ArmHybridController::goalCB(actionlib::ActionServer<control_msgs::FollowJoi
         result.error_string = error_string;
         gh.setRejected(result);
     }
-    is_enter_cb_ = false;
 }
 
 bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string)
@@ -207,12 +205,10 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
     // Hold current position if trajectory is empty
     if (msg->points.empty())
     {
-        mode_ = HOLDING_POSITION;
-        controller_state_interface_.initDesiredState(joints_interface_.jnt_states_);
+        changeMode(HOLDING_POSITION);
         ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
         return true;
     }
-
     // Trajectory initialization options
     TrajectoryPtr curr_traj_ptr;
     curr_trajectory_box_.get(curr_traj_ptr);
@@ -227,6 +223,8 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
         if (!traj_ptr->empty())
         {
             curr_trajectory_box_.set(traj_ptr);
+            changeMode(TRAJECTORY_TRACKING);
+            ROS_INFO_STREAM("CREAT WHOLE TRAJECTORY");
         }
         else
         {
