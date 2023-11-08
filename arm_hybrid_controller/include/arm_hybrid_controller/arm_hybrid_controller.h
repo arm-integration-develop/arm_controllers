@@ -28,7 +28,7 @@
 #include <actionlib/server/action_server.h>
 
 // some custom interface
-#include <tools/lp_filter.h>
+#include <arm_common/tools/lp_filter.h>
 #include <arm_hybrid_controller/controller_state_interface.h>
 #include <arm_hybrid_controller/joints_interface.h>
 #include <trajectory_interface/quintic_spline_segment.h>
@@ -39,98 +39,100 @@
 #include <realtime_tools/realtime_server_goal_handle.h>
 namespace arm_hybrid_controller
 {
-namespace internal {
-    template<class Enclosure, class Member>
-    inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclosure, Member &member) {
-        actionlib::EnclosureDeleter<Enclosure> d(enclosure);
-        boost::shared_ptr<Member> p(&member, d);
-        return p;
-    }
+namespace internal
+{
+template <class Enclosure, class Member>
+inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclosure, Member& member)
+{
+  actionlib::EnclosureDeleter<Enclosure> d(enclosure);
+  boost::shared_ptr<Member> p(&member, d);
+  return p;
 }
+}  // namespace internal
 class ArmHybridController
   : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-        hardware_interface::JointStateInterface>
+                                                          hardware_interface::JointStateInterface>
 {
 public:
-    ArmHybridController() = default;
-    bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh) override;
-    void starting(const ros::Time& time) override;
-    void update(const ros::Time& time, const ros::Duration& period) override;
+  ArmHybridController() = default;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh) override;
+  void starting(const ros::Time& time) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-    typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
-    typedef std::shared_ptr<ActionServer>                                                       ActionServerPtr;
-    typedef ActionServer::GoalHandle                                                            GoalHandle;
-    typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
-    typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
-    typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
-    typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>     StatePublisher;
-    typedef std::unique_ptr<StatePublisher>                                                     StatePublisherPtr;
+  typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction> ActionServer;
+  typedef std::shared_ptr<ActionServer> ActionServerPtr;
+  typedef ActionServer::GoalHandle GoalHandle;
+  typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
+  typedef boost::shared_ptr<RealtimeGoalHandle> RealtimeGoalHandlePtr;
+  typedef trajectory_msgs::JointTrajectory::ConstPtr JointTrajectoryConstPtr;
+  typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> StatePublisher;
+  typedef std::unique_ptr<StatePublisher> StatePublisherPtr;
 
-    typedef joint_trajectory_controller::JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double>>          Segment;
-    typedef std::vector<Segment>                                                                TrajectoryPerJoint;
-    typedef std::vector<TrajectoryPerJoint>                                                     Trajectory;
-    typedef std::shared_ptr<Trajectory>                                                         TrajectoryPtr;
-    typedef std::shared_ptr<TrajectoryPerJoint>                                                 TrajectoryPerJointPtr;
-    typedef realtime_tools::RealtimeBox<TrajectoryPtr>                                          TrajectoryBox;
-    typedef typename Segment::Scalar                                                            Scalar;
+  typedef joint_trajectory_controller::JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double>> Segment;
+  typedef std::vector<Segment> TrajectoryPerJoint;
+  typedef std::vector<TrajectoryPerJoint> Trajectory;
+  typedef std::shared_ptr<Trajectory> TrajectoryPtr;
+  typedef std::shared_ptr<TrajectoryPerJoint> TrajectoryPerJointPtr;
+  typedef realtime_tools::RealtimeBox<TrajectoryPtr> TrajectoryBox;
+  typedef typename Segment::Scalar Scalar;
 
-    void moveJoint(const ros::Time& time, const ros::Duration& period);
-    void commandCB(const geometry_msgs::PointStampedConstPtr & msg)
-    {
-//        cmd_rt_buffer_.writeFromNonRT(*msg);
-    }
-    bool changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res);
-    void gravity_compensation();
-    void trajectory_teaching();
-    void trajectory_tracking(const ros::Time& now,const ros::Duration& period);
-    void holding_position(const ros::Time& now);
-    bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string);
-    void updateFuncExtensionPoint(const Trajectory& curr_traj, const TimeData& time_data)
-    {
-        // To be implemented by derived class
-    }
+  void moveJoint(const ros::Time& time, const ros::Duration& period);
+  void commandCB(const geometry_msgs::PointStampedConstPtr& msg)
+  {
+    //        cmd_rt_buffer_.writeFromNonRT(*msg);
+  }
+  bool changeHybridMode(controller_msgs::ChangeHybridModeRequest& req, controller_msgs::ChangeHybridModeResponse& res);
+  void gravity_compensation();
+  void trajectory_teaching();
+  void trajectory_tracking(const ros::Time& now, const ros::Duration& period);
+  void holding_position(const ros::Time& now);
+  bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string);
+  void updateFuncExtensionPoint(const Trajectory& curr_traj, const TimeData& time_data)
+  {
+    // To be implemented by derived class
+  }
 
-    // Action function
-    void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh);
-    void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
-    {
-        ROS_INFO_STREAM(gh.getGoalID());
-    }
-    void preemptActiveGoal();
-    enum
-    {
-        GRAVITY_COMPENSATION,
-        TRAJECTORY_TEACHING,
-        TRAJECTORY_TRACKING,
-        HOLDING_POSITION
-    };
+  // Action function
+  void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh);
+  void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
+  {
+    ROS_INFO_STREAM(gh.getGoalID());
+  }
+  void preemptActiveGoal();
+  enum
+  {
+    GRAVITY_COMPENSATION,
+    TRAJECTORY_TEACHING,
+    TRAJECTORY_TRACKING,
+    HOLDING_POSITION
+  };
 
-    int mode_;
-    bool is_enter_cb_= false;
-    std::string name_;
-    ros::Time last_time_;
-    ros::Timer goal_handle_timer_;
-    ros::Time new_gl_time_;
-    ros::Time trajectory_points_time_;
+  int mode_;
+  bool is_enter_cb_ = false;
+  std::string name_;
+  ros::Time last_time_;
+  ros::Timer goal_handle_timer_;
+  ros::Time new_gl_time_;
+  ros::Time trajectory_points_time_;
 
-    ros::ServiceServer change_mode_server_;
-    ros::Duration action_monitor_period_;
-    ros::NodeHandle    controller_nh_;
-    std::shared_ptr<actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>> action_server_;
+  ros::ServiceServer change_mode_server_;
+  ros::Duration action_monitor_period_;
+  ros::NodeHandle controller_nh_;
+  std::shared_ptr<actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>> action_server_;
 
-//    int point_current_=0;
-    std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
-    dynamics_interface::DynamicsInterface dynamics_interface_;
-    JointsInterface joints_interface_;
-    ControllerStateInterface controller_state_interface_{};
-    std::vector<std::string> joint_names_;
-    int num_hw_joints_;
-    joint_trajectory_controller::SegmentTolerances<double> default_tolerances_; ///< Default trajectory segment tolerances.
+  //    int point_current_=0;
+  std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
+  dynamics_interface::DynamicsInterface dynamics_interface_;
+  JointsInterface joints_interface_;
+  ControllerStateInterface controller_state_interface_{};
+  std::vector<std::string> joint_names_;
+  int num_hw_joints_;
+  joint_trajectory_controller::SegmentTolerances<double> default_tolerances_;  ///< Default trajectory segment tolerances.
 
-    RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
-    TrajectoryBox curr_trajectory_box_;
+  RealtimeGoalHandlePtr rt_active_goal_;  ///< Currently active action goal, if any.
+  TrajectoryBox curr_trajectory_box_;
 };
-}// namespace arm_hybrid_controller
+}  // namespace arm_hybrid_controller
 
 PLUGINLIB_EXPORT_CLASS(arm_hybrid_controller::ArmHybridController, controller_interface::ControllerBase)

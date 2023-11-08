@@ -37,18 +37,18 @@
 
 #pragma once
 
-#include <interface/hardware_interface/robot_state_interface.h>
-#include <tools/tf_rt_broadcaster.h>
+#include <arm_common/interface/hardware_interface/robot_state_interface.h>
+#include <arm_common/tools/tf_rt_broadcaster.h>
 
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
+#include <kdl/tree.hpp>
 #include <pluginlib/class_list_macros.hpp>
+#include <realtime_tools/realtime_buffer.h>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/buffer.h>
 #include <urdf/model.h>
-#include <kdl/tree.hpp>
-#include <realtime_tools/realtime_buffer.h>
 
 namespace robot_state_controller
 {
@@ -66,7 +66,7 @@ public:
 
 class RobotStateController
   : public controller_interface::MultiInterfaceController<hardware_interface::JointStateInterface,
-          hardware_interface::RobotStateInterface>
+                                                          hardware_interface::RobotStateInterface>
 {
 public:
   RobotStateController() = default;
@@ -93,7 +93,8 @@ private:
   tf2_ros::Buffer* tf_buffer_{};
   tf::TfRtBroadcaster tf_broadcaster_;
   tf::StaticTfRtBroadcaster static_tf_broadcaster_;
-  // Do not use tf2_ros::TransformListener because it will lead to setTransform calling twice when publishing the transform
+  // Do not use tf2_ros::TransformListener because it will lead to setTransform
+  // calling twice when publishing the transform
   ros::Subscriber tf_sub_;
   ros::Subscriber tf_static_sub_;
   realtime_tools::RealtimeBuffer<tf2_msgs::TFMessage> tf_msg_;
