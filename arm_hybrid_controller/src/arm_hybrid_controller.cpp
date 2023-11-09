@@ -79,9 +79,6 @@ void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &
 }
 void ArmHybridController::update(const ros::Time &time, const ros::Duration &period)
 {
-    controller_state_interface_.updateTimeData(time,period);
-    dynamics_interface_.pubDynamics();
-    controller_state_interface_.update(time,joints_interface_.jnt_states_);
     switch (mode_)
     {
         case GRAVITY_COMPENSATION:
@@ -97,6 +94,10 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
             holding_position(time);
             break;
     }
+    if(mode_ != TRAJECTORY_TRACKING)
+        controller_state_interface_.updateTimeData(time,period);
+    dynamics_interface_.pubDynamics();
+    controller_state_interface_.update(time,joints_interface_.jnt_states_);
     last_time_ = time;
     if(dynamics_interface_.send_tau_)
         moveJoint(time,period);
@@ -125,26 +126,107 @@ void ArmHybridController::trajectory_tracking(const ros::Time& time, const ros::
         ROS_INFO_STREAM("NO msg");
         changeMode(HOLDING_POSITION);
     }
-//    // Curr_traj is use for computer tolerance.
+    // Curr_traj is use for computer tolerance.
     else
     {
-        Trajectory& curr_traj = *curr_traj_ptr;
-
+//        Trajectory& curr_traj = *curr_traj_ptr;
         controller_state_interface_.old_time_data_ = *(controller_state_interface_.time_data_.readFromRT());
-        // Update time data
         TimeData time_data;
         time_data.time   = time;                                     // Cache current time
         time_data.period = period;                                   // Cache current control period
         time_data.uptime = controller_state_interface_.old_time_data_.uptime + period; // Update controller uptime
         controller_state_interface_.time_data_.writeFromNonRT(time_data);
+//        controller_state_interface_.updateTimeData(time,period);
+//        controller_state_interface_.updateDesiredStates<Trajectory>(trajectory_points_time_, curr_traj_ptr.get());
+        // Update current state and state error
+        controller_state_interface_.updateDesiredStates<Trajectory>(time_data.uptime, curr_traj_ptr.get());
 
-        controller_state_interface_.updateDesiredStates<Trajectory>(trajectory_points_time_, curr_traj_ptr.get());
+//        changeMode(HOLDING_POSITION);
+
+/*      For error check
+        for (int i = 0; i < num_hw_joints_; ++i)
+        {
+            typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], time_data.uptime.toSec(), controller_state_interface_.desired_joint_state_);
+            if (curr_traj[i].end() == segment_it)
+            {
+                // Non-realtime safe, but should never happen under normal operation
+                ROS_ERROR_NAMED(name_,"Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
+                changeMode(HOLDING_POSITION);
+                return;
+            }
+            // Get state error for current joint
+            controller_state_interface_.state_joint_error_.position[0] = controller_state_interface_.state_error_.position[i];
+            controller_state_interface_.state_joint_error_.velocity[0] = controller_state_interface_.state_error_.velocity[i];
+            controller_state_interface_.state_joint_error_.acceleration[0] = controller_state_interface_.state_error_.acceleration[i];
+
+            //Check tolerances
+            const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
+            if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
+            {
+                // Check tolerances
+                if (controller_state_interface_.time_data_.readFromRT()->uptime.toSec() < segment_it->endTime())
+                {
+                    // Currently executing a segment: check path tolerances
+                    const joint_trajectory_controller::SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
+                    if (!checkStateTolerancePerJoint(controller_state_interface_.state_joint_error_, joint_tolerances.state_tolerance))
+                    {
+                        rt_segment_goal->preallocated_result_->error_code =
+                                control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+                        rt_segment_goal->preallocated_result_->error_string = joint_names_[i] + " path error " + std::to_string( controller_state_interface_.state_joint_error_.position[0] );
+                        rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+                        // Force this to run before destroying rt_active_goal_ so results message is returned
+                        rt_active_goal_->runNonRealtime(ros::TimerEvent());
+                        rt_active_goal_.reset();
+                        successful_joint_traj_.reset();
+                    }
+                }
+                else if (segment_it == --curr_traj[i].end())
+                {
+                    // Controller uptime
+                    const ros::Time uptime = controller_state_interface_.time_data_.readFromRT()->uptime;
+
+                    // Checks that we have ended inside the goal tolerances
+                    const joint_trajectory_controller::SegmentTolerancesPerJoint<Scalar>& tolerances = segment_it->getTolerances();
+                    const bool inside_goal_tolerances = checkStateTolerancePerJoint(controller_state_interface_.state_joint_error_, tolerances.goal_state_tolerance);
+
+                    if (inside_goal_tolerances)
+                    {
+                        successful_joint_traj_[i] = 1;
+                    }
+                    else if (uptime.toSec() < segment_it->endTime() + tolerances.goal_time_tolerance)
+                    {
+                        // Still have some time left to meet the goal state tolerances
+                    }
+                    else
+                    {
+                        rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+                        rt_segment_goal->preallocated_result_->error_string = joint_names_[i] + " goal error " + std::to_string(controller_state_interface_.state_joint_error_.position[0] );
+                        rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+                        // Force this to run before destroying rt_active_goal_ so results message is returned
+                        rt_active_goal_->runNonRealtime(ros::TimerEvent());
+                        rt_active_goal_.reset();
+                        successful_joint_traj_.reset();
+                    }
+                }
+            }
+        }
+
+        //If there is an active goal and all segments finished successfully then set goal as succeeded
+        RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+        if (current_active_goal && static_cast<int>(successful_joint_traj_.count()) == num_hw_joints_)
+        {
+            current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+            current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
+            current_active_goal.reset(); // do not publish feedback
+            rt_active_goal_.reset();
+            successful_joint_traj_.reset();
+        }
+*/
         for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
             double position_pid_value = joints_interface_.joints_[i].position_pid_->computeCommand(controller_state_interface_.state_error_.position[i],time-last_time_);
             double cmd = position_pid_value;
             joints_interface_.joints_[i].exe_effort_ = cmd;
         }
-        ArmHybridController::updateFuncExtensionPoint(curr_traj, time_data);
         trajectory_points_time_+=period;
     }
 }
@@ -164,11 +246,6 @@ void ArmHybridController::preemptActiveGoal()
 void ArmHybridController::goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
 {
     ROS_INFO_STREAM("goalCB");
-//        Use for test trajectory without segment
-//    point_current_ = 0;
-    points_ = gh.getGoal()->trajectory.points;
-    new_gl_time_ = ros::Time::now();
-//        Use for test trajectory without segment
     RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
     std::string error_string;
     const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),rt_goal,&error_string);
@@ -200,7 +277,10 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
     // Time of the next update
     const ros::Time next_update_time = time_data->time + time_data->period;
     // Uptime of the next update
-//    ros::Time next_update_uptime = time_data->uptime + time_data->period;
+    ros::Time next_update_uptime = time_data->uptime + time_data->period;
+    typedef joint_trajectory_controller::InitJointTrajectoryOptions<Trajectory> Options;
+    Options options;
+    options.other_time_base = &next_update_uptime;
 
     // Hold current position if trajectory is empty
     if (msg->points.empty())
@@ -218,12 +298,12 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
     try
     {
         TrajectoryPtr traj_ptr(new Trajectory);
-        *traj_ptr = joint_trajectory_controller::initJointTrajectory<Trajectory>(*msg, next_update_time);
-        trajectory_points_time_ = msg.get()->header.stamp.now();
+        *traj_ptr = joint_trajectory_controller::initJointTrajectory<Trajectory>(*msg, next_update_time,options);
         if (!traj_ptr->empty())
         {
             curr_trajectory_box_.set(traj_ptr);
             changeMode(TRAJECTORY_TRACKING);
+            trajectory_points_time_ = msg.get()->header.stamp.now();
             ROS_INFO_STREAM("CREAT WHOLE TRAJECTORY");
         }
         else

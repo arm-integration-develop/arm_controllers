@@ -5,6 +5,7 @@
 #pragma once
 
 #include <functional>
+#include <boost/dynamic_bitset.hpp>
 
 // dynamics
 #include <dynamics_interface/dynamics_interface.h>
@@ -130,6 +131,7 @@ private:
 
     RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
     TrajectoryBox curr_trajectory_box_;
+    boost::dynamic_bitset<> successful_joint_traj_;
 };
 }// namespace arm_hybrid_controller
 
