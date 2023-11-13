@@ -32,9 +32,18 @@
 #include <tools/lp_filter.h>
 #include <arm_hybrid_controller/controller_state_interface.h>
 #include <arm_hybrid_controller/joints_interface.h>
-#include <trajectory_interface/quintic_spline_segment.h>
+
+// joint_trajectory_controller_interface
 #include <joint_trajectory_interface/init_joint_trajectory.h>
 #include <joint_trajectory_interface/creat_joint_trajectory.h>
+#include <joint_trajectory_interface/joint_trajectory_segment.h>
+#include <joint_trajectory_interface/init_joint_trajectory.h>
+#include <joint_trajectory_interface/hardware_interface_adapter.h>
+#include <joint_trajectory_interface/hold_trajectory_builder.h>
+#include <joint_trajectory_interface/stop_trajectory_builder.h>
+
+// trajectory_interface
+#include <trajectory_interface/quintic_spline_segment.h>
 
 // realtime_tools
 #include <realtime_tools/realtime_server_goal_handle.h>
@@ -56,6 +65,7 @@ public:
     ArmHybridController() = default;
     bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh) override;
     void starting(const ros::Time& time) override;
+    void stopping(const ros::Time& /*time*/) override;
     void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
@@ -95,10 +105,7 @@ private:
 
     // Action function
     void goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh);
-    void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
-    {
-        ROS_INFO_STREAM(gh.getGoalID());
-    }
+    void cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh);
     void preemptActiveGoal();
     enum
     {

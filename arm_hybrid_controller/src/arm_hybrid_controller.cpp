@@ -24,6 +24,10 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     ros::NodeHandle nh_dynamics(controller_nh_, "dynamics");
     dynamics_interface_.init(nh_dynamics);
 
+    // Default tolerances
+    ros::NodeHandle tol_nh(controller_nh_, "constraints");
+    default_tolerances_ = joint_trajectory_controller::getSegmentTolerances<Scalar>(tol_nh, joint_names_);
+
     // Action Service
     action_server_.reset(
             new actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>(controller_nh_, "follow_joint_trajectory",
@@ -73,6 +77,12 @@ void ArmHybridController::starting(const ros::Time& time)
     mode_ = HOLDING_POSITION;
     controller_state_interface_.initDesiredState(joints_interface_.jnt_states_);
 }
+
+inline void ArmHybridController::stopping(const ros::Time& /*time*/)
+{
+    preemptActiveGoal();
+}
+
 void ArmHybridController::moveJoint(const ros::Time &time, const ros::Duration &period)
 {
     joints_interface_.moveJoint(time,period);
@@ -243,9 +253,43 @@ void ArmHybridController::preemptActiveGoal()
     }
 }
 
+void ArmHybridController::cancelCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
+{
+    RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+
+    // Check that cancel request refers to currently active goal (if any)
+    if (current_active_goal && current_active_goal->gh_ == gh)
+    {
+        // Reset current goal
+        rt_active_goal_.reset();
+
+        // Controller uptime
+//        const ros::Time uptime = controller_state_interface_.time_data_.readFromRT()->uptime;
+
+        // Enter hold current position mode
+//        setHoldPosition(uptime);
+        mode_ = HOLDING_POSITION;
+        ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib.");
+
+        // Mark the current goal as canceled
+        current_active_goal->gh_.setCanceled();
+    }
+}
 void ArmHybridController::goalCB(actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle gh)
 {
     ROS_INFO_STREAM("goalCB");
+
+    ROS_DEBUG_STREAM_NAMED(name_,"Received new action goal");
+    // Precondition: Running controller
+    if (!this->isRunning())
+    {
+        ROS_ERROR_NAMED(name_, "Can't accept new action goals. Controller is not running.");
+        control_msgs::FollowJointTrajectoryResult result;
+        result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
+        gh.setRejected(result);
+        return;
+    }
+
     RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
     std::string error_string;
     const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),rt_goal,&error_string);
@@ -278,9 +322,18 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
     const ros::Time next_update_time = time_data->time + time_data->period;
     // Uptime of the next update
     ros::Time next_update_uptime = time_data->uptime + time_data->period;
+
     typedef joint_trajectory_controller::InitJointTrajectoryOptions<Trajectory> Options;
     Options options;
+    TrajectoryPtr curr_traj_ptr;
+    curr_trajectory_box_.get(curr_traj_ptr);
+
     options.other_time_base = &next_update_uptime;
+    options.current_trajectory  = curr_traj_ptr.get();
+    options.joint_names = &joint_names_;
+    options.error_string = error_string;
+    options.rt_goal_handle = gh;
+    options.default_tolerances = &default_tolerances_;
 
     // Hold current position if trajectory is empty
     if (msg->points.empty())
@@ -289,9 +342,6 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
         ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
         return true;
     }
-    // Trajectory initialization options
-    TrajectoryPtr curr_traj_ptr;
-    curr_trajectory_box_.get(curr_traj_ptr);
 
     // Update currently executing trajectory
     std::string err_string;
