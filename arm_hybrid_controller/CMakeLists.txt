@@ -61,6 +61,9 @@ add_library(${PROJECT_NAME}
         include/joint_trajectory_interface/joint_trajectory_msg_utils.h
         include/joint_trajectory_interface/init_joint_trajectory.h
         include/joint_trajectory_interface/creat_joint_trajectory.h
+        include/joint_trajectory_interface/trajectory_builder.h
+        include/joint_trajectory_interface/hold_trajectory_builder.h
+        include/joint_trajectory_interface/stop_trajectory_builder.h
         )
 
 target_link_libraries(${PROJECT_NAME}
