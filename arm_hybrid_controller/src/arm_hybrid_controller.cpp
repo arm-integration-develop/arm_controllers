@@ -28,6 +28,10 @@ bool ArmHybridController::init(hardware_interface::RobotHW *robot_hw, ros::NodeH
     ros::NodeHandle tol_nh(controller_nh_, "constraints");
     default_tolerances_ = joint_trajectory_controller::getSegmentTolerances<Scalar>(tol_nh, joint_names_);
 
+    // For teaching
+    ros::NodeHandle teaching_nh(controller_nh_, "teaching");
+    teaching_nh.getParam("teach_sample_interval",teach_sample_interval_);
+    teach_trajectory_ = boost::make_shared<trajectory_msgs::JointTrajectory>();
     // Action Service
     action_server_.reset(
             new actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>(controller_nh_, "follow_joint_trajectory",
@@ -95,7 +99,7 @@ void ArmHybridController::update(const ros::Time &time, const ros::Duration &per
             gravity_compensation();
             break;
         case TRAJECTORY_TEACHING:
-            trajectory_teaching();
+            trajectory_teaching(time);
             break;
         case TRAJECTORY_TRACKING:
             trajectory_tracking(time,period);
@@ -117,6 +121,45 @@ void ArmHybridController::gravity_compensation()
     dynamics_interface_.computerInverseDynamics(joints_interface_.jnt_states_);
     for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
         joints_interface_.joints_[i].exe_effort_ = dynamics_interface_.tau_without_a_(i);
+    }
+    if (teach_points_num_)
+    {
+        std::string error_string;
+        teach_trajectory_->header.stamp = ros::Time::now();
+        teach_trajectory_->points = teach_points_;
+        teach_trajectory_->joint_names = joint_names_;
+        const bool update_ok = updateTrajectoryCommand(teach_trajectory_,rt_active_goal_,&error_string);
+        if (update_ok)
+        {
+            record_teach_time_ = false;
+            teach_points_num_ = 0;
+            teach_points_.clear();
+        }
+    }
+}
+void ArmHybridController::trajectory_teaching(const ros::Time& now)
+{
+    if (!record_teach_time_)
+    {
+        record_teach_time_ = true;
+        start_teach_time_ = now;
+    }
+    dynamics_interface_.computerInverseDynamics(joints_interface_.jnt_states_);
+    for (int i = 0; i < joints_interface_.num_hw_joints_; ++i) {
+        joints_interface_.joints_[i].exe_effort_ = dynamics_interface_.tau_without_a_(i);
+    }
+    if ( (now - start_teach_time_).toSec() > (teach_points_num_+1)*teach_sample_interval_)
+    {
+        ROS_INFO_STREAM("TIME"<<(now - start_teach_time_).toSec());
+        trajectory_msgs::JointTrajectoryPoint point;
+        for (int i = 0; i < num_hw_joints_; ++i) {
+            point.positions.push_back(controller_state_interface_.current_state_.position[i]);
+            point.velocities.push_back(controller_state_interface_.current_state_.velocity[i]);
+            point.accelerations.push_back(controller_state_interface_.current_state_.acceleration[i]);
+            point.time_from_start = now - start_teach_time_;
+        }
+        teach_points_.push_back(point);
+        teach_points_num_++;
     }
 }
 void ArmHybridController::holding_position(const ros::Time& now)
@@ -237,7 +280,7 @@ void ArmHybridController::trajectory_tracking(const ros::Time& time, const ros::
             double cmd = position_pid_value;
             joints_interface_.joints_[i].exe_effort_ = cmd;
         }
-        trajectory_points_time_+=period;
+//        trajectory_points_time_+=period;
     }
 }
 void ArmHybridController::preemptActiveGoal()
@@ -339,6 +382,7 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
     if (msg->points.empty())
     {
         changeMode(HOLDING_POSITION);
+        ROS_INFO_STREAM("MSG IS EMPTY");
         ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
         return true;
     }
@@ -353,7 +397,7 @@ bool ArmHybridController::updateTrajectoryCommand(const JointTrajectoryConstPtr&
         {
             curr_trajectory_box_.set(traj_ptr);
             changeMode(TRAJECTORY_TRACKING);
-            trajectory_points_time_ = msg.get()->header.stamp.now();
+//            trajectory_points_time_ = msg.get()->header.stamp.now();
             ROS_INFO_STREAM("CREAT WHOLE TRAJECTORY");
         }
         else

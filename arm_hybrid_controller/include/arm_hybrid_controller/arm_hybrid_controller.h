@@ -38,7 +38,6 @@
 #include <joint_trajectory_interface/creat_joint_trajectory.h>
 #include <joint_trajectory_interface/joint_trajectory_segment.h>
 #include <joint_trajectory_interface/init_joint_trajectory.h>
-#include <joint_trajectory_interface/hardware_interface_adapter.h>
 #include <joint_trajectory_interface/hold_trajectory_builder.h>
 #include <joint_trajectory_interface/stop_trajectory_builder.h>
 
@@ -94,7 +93,7 @@ private:
     bool changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res);
     void changeMode(int mode);
     void gravity_compensation();
-    void trajectory_teaching();
+    void trajectory_teaching(const ros::Time& now);
     void trajectory_tracking(const ros::Time& now,const ros::Duration& period);
     void holding_position(const ros::Time& now);
     bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string);
@@ -127,7 +126,14 @@ private:
     ros::NodeHandle    controller_nh_;
     std::shared_ptr<actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>> action_server_;
 
-//    int point_current_=0;
+//   use for trajectory_teaching
+    bool record_teach_time_ = false;
+    int teach_points_num_ = 0;
+    double teach_sample_interval_;
+    ros::Time start_teach_time_;
+    std::vector<trajectory_msgs::JointTrajectoryPoint> teach_points_{};
+    trajectory_msgs::JointTrajectoryPtr teach_trajectory_{};
+//   int point_current_=0;
     std::vector<trajectory_msgs::JointTrajectoryPoint> points_;
     dynamics_interface::DynamicsInterface dynamics_interface_;
     JointsInterface joints_interface_;
