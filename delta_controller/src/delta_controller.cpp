@@ -10,7 +10,6 @@ bool DeltaController::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandl
 {
     controller_nh.getParam("use_gazebo",use_gazebo_);
     realtime_tf_pub_.init(node_, "/tf", 100);
-    tf_pub_ = controller_nh.advertise<geometry_msgs::TransformStamped>("/tf",1);
     hardware_interface::EffortJointInterface* effort_joint_interface;
     effort_joint_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
     ros::NodeHandle nh_active(controller_nh, "active");

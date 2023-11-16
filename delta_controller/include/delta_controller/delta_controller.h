@@ -39,7 +39,6 @@ private:
             realtime_tf_pub_.msg_ = transform;
             realtime_tf_pub_.unlockAndPublish();
         }
-        tf_pub_.publish(transform);
     }
     void commandCB(const geometry_msgs::PointStampedConstPtr & msg)
     {
@@ -59,7 +58,6 @@ private:
     delta_controller::DeltaKinematics delta_kinematics_;
 
     realtime_tools::RealtimePublisher<geometry_msgs::TransformStamped> realtime_tf_pub_{};
-    ros::Publisher tf_pub_{};
     ros::NodeHandle node_;
     ros::Subscriber tf_sub_,cmd_subscriber_;
     realtime_tools::RealtimeBuffer<geometry_msgs::PointStamped> cmd_rt_buffer_;

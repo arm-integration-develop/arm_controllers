@@ -30,7 +30,7 @@ public:
     geometry_msgs::TransformStamped solveForwardKinematics(double theta1, double theta2, double theta3)
     {
         geometry_msgs::TransformStamped EE_tf;
-        EE_tf.header.frame_id = "static_base";
+        EE_tf.header.frame_id = "base_link";
         EE_tf.header.stamp = ros::Time::now();
         EE_tf.child_frame_id = "move_ee";
 //      the algorithm of forward kinematics
@@ -83,13 +83,9 @@ public:
         solution.z = quadraticFormulaSmall(a,b,c);
         solution.x = a1*solution.z+b1;
         solution.y = a2*solution.z+b2;
-        ROS_INFO_STREAM("solution.x="<<solution.x);
-        ROS_INFO_STREAM("solution.y="<<solution.y);
-        ROS_INFO_STREAM("solution.z="<<solution.z);
-//
         EE_tf.transform.translation.x = solution.x;
         EE_tf.transform.translation.y = solution.y;
-        EE_tf.transform.translation.y = solution.z;
+        EE_tf.transform.translation.z = solution.z;
         EE_tf.transform.rotation.x = 0;
         EE_tf.transform.rotation.y = 0;
         EE_tf.transform.rotation.z = 0;
