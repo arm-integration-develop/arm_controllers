@@ -34,11 +34,10 @@ public:
         EE_tf.header.stamp = ros::Time::now();
         EE_tf.child_frame_id = "move_ee";
 //      the algorithm of forward kinematics
-        double tan_30_deg = 0.5773502692;
         double sin_30_deg = 0.5;
-        double cos_30_deg = 0.86602540378;
-        double y_F = parameter_.f/2*tan_30_deg;
-        double y_delta_E = parameter_.e/2*tan_30_deg;
+        double cos_30_deg = sqrt(3)/2;
+        double y_F = parameter_.f/2* sqrt(3);
+        double y_delta_E = parameter_.e/2* sqrt(3);
         geometry_msgs::Point F1,F2,F3,J1,J2,J3,J1_prime,J2_prime,J3_prime,solution;
         F1.x = 0;
         F1.y = -y_F;

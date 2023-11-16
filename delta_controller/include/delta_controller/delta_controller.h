@@ -7,6 +7,8 @@
 #include "kinematics.h"
 #include <string>
 #include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -32,6 +34,7 @@ public:
 
 private:
     void moveJoint(const ros::Time& time, const ros::Duration& period);
+    void publishVel(const geometry_msgs::TransformStamped transform,const geometry_msgs::TransformStamped start_transform);
     void publishTF(const geometry_msgs::TransformStamped transform)
     {
         if (realtime_tf_pub_.trylock())
@@ -58,6 +61,12 @@ private:
     delta_controller::DeltaKinematics delta_kinematics_;
 
     realtime_tools::RealtimePublisher<geometry_msgs::TransformStamped> realtime_tf_pub_{};
+//    geometry_msgs::TwistStamped vel_msgs_{};
+    geometry_msgs::Twist vel_msgs_{};
+    ros::Publisher vel_pub_{};
+    std::string RC_topic_;
+    double coefficient_;
+    double RC_start_value_;
     ros::NodeHandle node_;
     ros::Subscriber tf_sub_,cmd_subscriber_;
     realtime_tools::RealtimeBuffer<geometry_msgs::PointStamped> cmd_rt_buffer_;
