@@ -37,8 +37,8 @@
 
 #pragma once
 
-#include <interface/hardware_interface/robot_state_interface.h>
-#include <tools/tf_rt_broadcaster.h>
+#include <arm_common/interface/hardware_interface/robot_state_interface.h>
+#include <arm_common/tools/tf_rt_broadcaster.h>
 
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>

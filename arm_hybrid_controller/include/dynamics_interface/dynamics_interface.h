@@ -16,8 +16,8 @@
 
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <tools/lp_filter.h>
-#include <tools/ros_param.h>
+#include <arm_common/tools/lp_filter.h>
+#include <arm_common/tools/ros_param.h>
 
 namespace dynamics_interface
 {

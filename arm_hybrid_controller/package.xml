@@ -10,7 +10,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
 
-  <depend>controller_msgs</depend>
+  <depend>arm_msgs</depend>
   <depend>controller_interface</depend>
   <depend>effort_controllers</depend>
   <depend>realtime_tools</depend>

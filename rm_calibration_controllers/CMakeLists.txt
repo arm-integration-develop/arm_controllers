@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(delta_controller)
+project(rm_calibration_controllers)
 
+## Use C++14
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+## By adding -Wall and -Werror, the compiler does not ignore warnings anymore,
+## enforcing cleaner code.
 add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
@@ -11,46 +14,49 @@ find_package(catkin REQUIRED
         COMPONENTS
         roscpp
 
-        effort_controllers
-        pluginlib
+        arm_common
         controller_interface
-        realtime_tools
+        effort_controllers
         )
 
 ###################################
 ## catkin specific configuration ##
 ###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if your package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
         INCLUDE_DIRS
         include
         LIBRARIES
-        ${PROJECT_NAME}
         CATKIN_DEPENDS
         roscpp
 
+        arm_common
         effort_controllers
-        pluginlib
-        controller_interface
         LIBRARIES ${PROJECT_NAME}
 )
 
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
 )
 
-## Declare cpp executables
+## Declare a cpp library
 add_library(${PROJECT_NAME}
-        src/${PROJECT_NAME}.cpp
-
-        include/delta_controller/kinematics.h
-        include/delta_controller/delta_controller.h
-        include/delta_controller/trajectory_planning.h
+        src/calibration_base.cpp
+        src/mechanical_calibration_controller.cpp
         )
 
-target_link_libraries(${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        )
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -70,14 +76,10 @@ install(
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
 )
-install(
-        FILES delta_controller_plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
 
-## Mark other files for installation
+# Mark other files for installation
 install(
-        DIRECTORY test
+        FILES rm_calibration_controllers_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

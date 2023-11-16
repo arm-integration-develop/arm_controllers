@@ -85,6 +85,7 @@ void DeltaController::moveJoint(const ros::Time& time, const ros::Duration& peri
     {
 //        ROS_INFO_STREAM(joint.angle);
         joint.position_ctrl_->setCommand(joint.angle);
+//        ROS_INFO_STREAM(joint.angle);
         joint.position_ctrl_->update(time, period);
     }
     if (use_gazebo_)

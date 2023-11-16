@@ -10,7 +10,6 @@
     <author email="2028238109@qq.com">Siyang Liu</author>
 
     <buildtool_depend>catkin</buildtool_depend>
-    <depend>controller_msgs</depend>
     <exec_depend>robot_state_controller</exec_depend>
     <exec_depend>delta_controller</exec_depend>
     <exec_depend>arm_hybrid_controller</exec_depend>

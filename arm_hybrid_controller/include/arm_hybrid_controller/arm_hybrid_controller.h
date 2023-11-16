@@ -21,7 +21,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <controller_msgs/ChangeHybridMode.h>
+#include <arm_msgs/ChangeHybridMode.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -29,7 +29,7 @@
 #include <actionlib/server/action_server.h>
 
 // some custom interface
-#include <tools/lp_filter.h>
+#include <arm_common/tools/lp_filter.h>
 #include <arm_hybrid_controller/controller_state_interface.h>
 #include <arm_hybrid_controller/joints_interface.h>
 
@@ -90,7 +90,7 @@ private:
     {
 //        cmd_rt_buffer_.writeFromNonRT(*msg);
     }
-    bool changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res);
+    bool changeHybridMode(arm_msgs::ChangeHybridModeRequest &req,arm_msgs::ChangeHybridModeResponse &res);
     void changeMode(int mode);
     void gravity_compensation();
     void trajectory_teaching(const ros::Time& now);

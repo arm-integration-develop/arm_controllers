@@ -68,7 +68,7 @@ void ArmHybridController::changeMode(int mode)
     std::string reply = "Now the mode is:"+ mode_string;
     ROS_INFO_STREAM(reply);
 }
-bool ArmHybridController::changeHybridMode(controller_msgs::ChangeHybridModeRequest &req,controller_msgs::ChangeHybridModeResponse &res)
+bool ArmHybridController::changeHybridMode(arm_msgs::ChangeHybridModeRequest &req,arm_msgs::ChangeHybridModeResponse &res)
 {
     int mode = static_cast<int>(req.new_mode);
     changeMode(mode);

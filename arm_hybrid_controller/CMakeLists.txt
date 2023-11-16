@@ -12,7 +12,7 @@ find_package(catkin REQUIRED
         roscpp
 
         arm_common
-        controller_msgs
+        arm_msgs
         control_toolbox
         effort_controllers
         pluginlib
@@ -32,7 +32,7 @@ catkin_package(
         roscpp
 
         arm_common
-        controller_msgs
+        arm_msgs
         control_toolbox
         effort_controllers
         pluginlib
