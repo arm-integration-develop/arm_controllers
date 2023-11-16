@@ -41,33 +41,33 @@ public:
         double y_delta_E = parameter_.e/2*tan_30_deg;
         geometry_msgs::Point F1,F2,F3,J1,J2,J3,J1_prime,J2_prime,J3_prime,solution;
         F1.x = 0;
-        F1.z = 0;
         F1.y = -y_F;
-        F2.x = -y_F*cos_30_deg;
+        F1.z = 0;
+        F2.x = y_F*cos_30_deg;
         F2.y = y_F*sin_30_deg;
         F2.z = 0;
-        F3.x = y_F*cos_30_deg;
+        F3.x = -y_F*cos_30_deg;
         F3.y = y_F*sin_30_deg;
         F3.z = 0;
         J1 = F1;
-        J1.x-=parameter_.r_f*cos(theta1);
+        J1.y-=parameter_.r_f*cos(theta1);
         J1.z-=parameter_.r_f*sin(theta1);
         J2 = F2;
-        J2.x-=parameter_.r_f*cos(theta2)*cos_30_deg;
+        J2.x+=parameter_.r_f*cos(theta2)*cos_30_deg;
         J2.y+=parameter_.r_f*cos(theta2)*sin_30_deg;
         J2.z-=parameter_.r_f*sin(theta2);
         J3 = F3;
-        J3.x+=parameter_.r_f*cos(theta3)*cos_30_deg;
+        J3.x-=parameter_.r_f*cos(theta3)*cos_30_deg;
         J3.y+=parameter_.r_f*cos(theta3)*sin_30_deg;
         J3.z-=parameter_.r_f*sin(theta3);
         J1_prime = J1;
         J1_prime.y +=  y_delta_E;
         J2_prime = J2;
-        J2_prime.x +=  y_delta_E*cos_30_deg;
-        J2_prime.y +=  y_delta_E*sin_30_deg;
+        J2_prime.x -=  y_delta_E*cos_30_deg;
+        J2_prime.y -=  y_delta_E*sin_30_deg;
         J3_prime = J3;
-        J3_prime.x -=  y_delta_E*cos_30_deg;
-        J3_prime.y -=  y_delta_E*sin_30_deg;
+        J3_prime.x +=  y_delta_E*cos_30_deg;
+        J3_prime.y +=  y_delta_E*sin_30_deg;
         double W1 = pow2(J1_prime.x)+pow2(J1_prime.y)+pow2(J1_prime.z);
         double W2 = pow2(J2_prime.x)+pow2(J2_prime.y)+pow2(J2_prime.z);
         double W3 = pow2(J3_prime.x)+pow2(J3_prime.y)+pow2(J3_prime.z);
@@ -110,7 +110,7 @@ public:
         double tan_30_deg = 0.5773502692;
         double y_F = -parameter_.f/2*tan_30_deg;
         double y_delta_E = parameter_.e/2*tan_30_deg;
-        std::vector<double> alpha_rad{0., 240*M_PI/180, 120*M_PI/180};
+        std::vector<double> alpha_rad{0., 120*M_PI/180, 240*M_PI/180};
         std::vector<std::vector<double>> passive_angle{{0.,0.,0.,0.},{0.,0.,0.,0.},{0.,0.,0.,0.}};
         std::vector<geometry_msgs::Point> j1_position = getJ1Position(x,y,z);
         std::vector<double> active_jnt = solveInverseKinematics(x,y,z);
@@ -147,7 +147,7 @@ public:
     {
         double tan_30_deg = 0.5773502692;
 //        double y_delta_E = parameter_.e/2*tan_30_deg;
-        std::vector<double> alpha_rad{0., 240*M_PI/180, 120*M_PI/180};
+        std::vector<double> alpha_rad{0., 120*M_PI/180, 240*M_PI/180};
         std::vector<geometry_msgs::Point> j1_position;
         j1_position.clear();
         for (int i = 0; i < 3; ++i) {
@@ -167,15 +167,6 @@ public:
             double J_y = ((y_F-c1*c2)- sqrt(c3))/(1+ pow2(c2));
             double J_z = c1+c2*J_y;
 
-//            double c1 = (pow2(y_F)- pow2(EE_position[1])-2*y_delta_E*EE_position[1]- pow2(y_delta_E)- pow2(parameter_.r_f) + pow2(parameter_.r_e)-pow2(EE_position[0]))/(2*EE_position[2]);
-//            double c2 = (y_F+EE_position[1]-y_delta_E)/EE_position[2];
-//            double c3 = 2*y_F*c1*c2-pow2(c1)+ pow2(parameter_.r_f)*(1+ pow2(c2))-pow2(y_F)* pow2(c2);
-//            if (c3<0)
-//            {
-//                ROS_INFO_STREAM("NO EXISTING POINT");
-//            }
-//            double J_y = (-1*(y_F+c1*c2)- sqrt(c3))/(1+ pow2(c2));
-//            double J_z = -(c1+c2*J_y);
             geometry_msgs::Point solution_point;
             solution_point.x =0.;
             solution_point.y = J_y;
