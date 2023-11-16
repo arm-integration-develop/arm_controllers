@@ -67,18 +67,18 @@ public:
         J2_prime.y -=  y_delta_E*sin_30_deg;
         J3_prime = J3;
         J3_prime.x +=  y_delta_E*cos_30_deg;
-        J3_prime.y +=  y_delta_E*sin_30_deg;
+        J3_prime.y -=  y_delta_E*sin_30_deg;
         double W1 = pow2(J1_prime.x)+pow2(J1_prime.y)+pow2(J1_prime.z);
         double W2 = pow2(J2_prime.x)+pow2(J2_prime.y)+pow2(J2_prime.z);
         double W3 = pow2(J3_prime.x)+pow2(J3_prime.y)+pow2(J3_prime.z);
         double d = (J2_prime.y-J1_prime.y)*J3_prime.x-(J3_prime.y - J1_prime.y)*J2_prime.x;
-        double a1 = (1/d)*((J2_prime.z-J1_prime.z)*(J3_prime.y-J1_prime.y)-(J3_prime.z-J1_prime.z)*(J2_prime.y-J1_prime.y));
+        double a1 = (-1/d)*((J2_prime.z-J1_prime.z)*(J3_prime.y-J1_prime.y)-(J3_prime.z-J1_prime.z)*(J2_prime.y-J1_prime.y));
         double a2 = (-1/d)*((J2_prime.z-J1_prime.z)*J3_prime.x-(J3_prime.z-J1_prime.z)*J2_prime.x);
-        double b1 = (-1/(2*d))*((W2-W1)*(J3_prime.y-J1_prime.y)-(W3-W1)*(J2_prime.y-J1_prime.y));
+        double b1 = (1/(2*d))*((W2-W1)*(J3_prime.y-J1_prime.y)-(W3-W1)*(J2_prime.y-J1_prime.y));
         double b2 = (1/(2*d))*((W2-W1)*J3_prime.x-(W3-W1)*J2_prime.x);
 //      solution the z value
         double a = pow2(a1)+pow2(a2)+1;
-        double b = 2*(a1+a2*(b2-J1_prime.y)-J1_prime.z);
+        double b = 2*(a1*b1+a2*(b2-J1_prime.y)-J1_prime.z);
         double c = (pow2(b1)+pow2(b2-J1_prime.y)+pow2(J1_prime.z)-pow2(parameter_.r_e));
         solution.z = quadraticFormulaSmall(a,b,c);
         solution.x = a1*solution.z+b1;

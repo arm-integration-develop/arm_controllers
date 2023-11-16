@@ -42,7 +42,8 @@ bool DeltaController::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandl
 void DeltaController::update(const ros::Time &time, const ros::Duration &period)
 {
     //get zhe act angle from /tf
-    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(jnt_states_[0].getPosition(), jnt_states_[1].getPosition(), jnt_states_[2].getPosition());
+//    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(jnt_states_[0].getPosition(), jnt_states_[1].getPosition(), jnt_states_[2].getPosition());
+    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(joints_[0].angle, joints_[1].angle, joints_[2].angle);
     publishTF(EE_tf);
     geometry_msgs::Point cmd = cmd_rt_buffer_.readFromRT()->point;
 //    if (judgeWorkSpace(cmd))
