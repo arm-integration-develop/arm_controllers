@@ -49,12 +49,13 @@ private:
     bool use_gazebo_;
     std::vector<double> jnt_angle_{0.,0.,0.};
     std::vector<std::vector<double>> passive_jnt_angle_{};
-    std::vector<std::string> joint_names_ = {"joint1", "joint2", "joint3"};
+    std::vector<std::string> joint_names_ = {"active_joint1", "active_joint2", "active_joint3"};
     std::vector<std::string> passive_joint_names_ =
             {"parallel_up_a_joint1", "parallel_up_b_joint1", "parallel_down_b_joint1", "parallel_down_a_joint1",
             "parallel_up_a_joint2", "parallel_up_b_joint2", "parallel_down_b_joint2", "parallel_down_a_joint2",
             "parallel_up_a_joint3", "parallel_up_b_joint3", "parallel_down_b_joint3", "parallel_down_a_joint3"};
     std::vector<Joint> joints_{},passive_joints_{};
+    std::vector<hardware_interface::JointStateHandle> jnt_states_;
     delta_controller::DeltaKinematics delta_kinematics_;
 
     realtime_tools::RealtimePublisher<geometry_msgs::TransformStamped> realtime_tf_pub_{};

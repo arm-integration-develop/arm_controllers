@@ -21,6 +21,7 @@ bool DeltaController::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandl
         ros::NodeHandle nh_position(nh_active, joint_name);
         j.position_ctrl_->init(effort_joint_interface, nh_position);
         joints_.push_back(j);
+        jnt_states_.push_back(robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(joint_name));
     }
     if (use_gazebo_)
     {
@@ -42,8 +43,7 @@ bool DeltaController::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandl
 void DeltaController::update(const ros::Time &time, const ros::Duration &period)
 {
     //get zhe act angle from /tf
-    double theta1 =0, theta2= 0, theta3= 0;
-    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(theta1, theta2, theta3);
+    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(jnt_states_[0].getPosition(), jnt_states_[1].getPosition(), jnt_states_[2].getPosition());
     publishTF(EE_tf);
     geometry_msgs::Point cmd = cmd_rt_buffer_.readFromRT()->point;
 //    if (judgeWorkSpace(cmd))

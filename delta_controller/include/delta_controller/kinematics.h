@@ -33,11 +33,59 @@ public:
         EE_tf.header.frame_id = "static_base";
         EE_tf.header.stamp = ros::Time::now();
         EE_tf.child_frame_id = "move_ee";
-        geometry_msgs::Point solution;
 //      the algorithm of forward kinematics
-        solution.x = 1;
-        solution.y = 2;
-        solution.z = 3;
+        double tan_30_deg = 0.5773502692;
+        double sin_30_deg = 0.5;
+        double cos_30_deg = 0.86602540378;
+        double y_F = parameter_.f/2*tan_30_deg;
+        double y_delta_E = parameter_.e/2*tan_30_deg;
+        geometry_msgs::Point F1,F2,F3,J1,J2,J3,J1_prime,J2_prime,J3_prime,solution;
+        F1.x = 0;
+        F1.z = 0;
+        F1.y = -y_F;
+        F2.x = -y_F*cos_30_deg;
+        F2.y = y_F*sin_30_deg;
+        F2.z = 0;
+        F3.x = y_F*cos_30_deg;
+        F3.y = y_F*sin_30_deg;
+        F3.z = 0;
+        J1 = F1;
+        J1.x-=parameter_.r_f*cos(theta1);
+        J1.z-=parameter_.r_f*sin(theta1);
+        J2 = F2;
+        J2.x-=parameter_.r_f*cos(theta2)*cos_30_deg;
+        J2.y+=parameter_.r_f*cos(theta2)*sin_30_deg;
+        J2.z-=parameter_.r_f*sin(theta2);
+        J3 = F3;
+        J3.x+=parameter_.r_f*cos(theta3)*cos_30_deg;
+        J3.y+=parameter_.r_f*cos(theta3)*sin_30_deg;
+        J3.z-=parameter_.r_f*sin(theta3);
+        J1_prime = J1;
+        J1_prime.y +=  y_delta_E;
+        J2_prime = J2;
+        J2_prime.x +=  y_delta_E*cos_30_deg;
+        J2_prime.y +=  y_delta_E*sin_30_deg;
+        J3_prime = J3;
+        J3_prime.x -=  y_delta_E*cos_30_deg;
+        J3_prime.y -=  y_delta_E*sin_30_deg;
+        double W1 = pow2(J1_prime.x)+pow2(J1_prime.y)+pow2(J1_prime.z);
+        double W2 = pow2(J2_prime.x)+pow2(J2_prime.y)+pow2(J2_prime.z);
+        double W3 = pow2(J3_prime.x)+pow2(J3_prime.y)+pow2(J3_prime.z);
+        double d = (J2_prime.y-J1_prime.y)*J3_prime.x-(J3_prime.y - J1_prime.y)*J2_prime.x;
+        double a1 = (1/d)*((J2_prime.z-J1_prime.z)*(J3_prime.y-J1_prime.y)-(J3_prime.z-J1_prime.z)*(J2_prime.y-J1_prime.y));
+        double a2 = (-1/d)*((J2_prime.z-J1_prime.z)*J3_prime.x-(J3_prime.z-J1_prime.z)*J2_prime.x);
+        double b1 = (-1/(2*d))*((W2-W1)*(J3_prime.y-J1_prime.y)-(W3-W1)*(J2_prime.y-J1_prime.y));
+        double b2 = (1/(2*d))*((W2-W1)*J3_prime.x-(W3-W1)*J2_prime.x);
+//      solution the z value
+        double a = pow2(a1)+pow2(a2)+1;
+        double b = 2*(a1+a2*(b2-J1_prime.y)-J1_prime.z);
+        double c = (pow2(b1)+pow2(b2-J1_prime.y)+pow2(J1_prime.z)-pow2(parameter_.r_e));
+        solution.z = quadraticFormulaSmall(a,b,c);
+        solution.x = a1*solution.z+b1;
+        solution.y = a2*solution.z+b2;
+        ROS_INFO_STREAM("solution.x="<<solution.x);
+        ROS_INFO_STREAM("solution.y="<<solution.y);
+        ROS_INFO_STREAM("solution.z="<<solution.z);
 //
         EE_tf.transform.translation.x = solution.x;
         EE_tf.transform.translation.y = solution.y;
@@ -145,7 +193,18 @@ public:
     {
         return pow(input,2);
     }
-
+    double quadraticFormulaSmall(double a,double b,double c)
+    {
+        double solution_small;
+        solution_small = (-b-sqrt(pow(b,2)-4*a*c))/(2*a);
+        return solution_small;
+    }
+    double quadraticFormulaBig(double a,double b,double c)
+    {
+        double solution_big;
+        solution_big = (-b+sqrt(pow(b,2)-4*a*c))/(2*a);
+        return solution_big;
+    }
 
 private:
     DeltaKinematicsParameter parameter_;
