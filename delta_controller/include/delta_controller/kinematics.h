@@ -102,7 +102,7 @@ public:
     std::vector<double> jnt_angle{0., 0., 0.};
     std::vector<geometry_msgs::Point> j1_position = getJ1Position(x, y, z);
     for (int i = 0; i < 3; ++i) {
-      jnt_angle[i] = -atan(j1_position[i].z / (parameter_.f / 2 * sqrt(3) - j1_position[i].y));
+      jnt_angle[i] = atan(j1_position[i].z / (-parameter_.f / (2 * sqrt(3)) - j1_position[i].y));
       //            ROS_INFO_STREAM(jnt_angle[i]);
     }
     return jnt_angle;
@@ -150,7 +150,6 @@ public:
   }
   std::vector<geometry_msgs::Point> getJ1Position(double x, double y, double z)
   {
-    double tan_30_deg = 0.5773502692;
     //        double y_delta_E = parameter_.e/2*tan_30_deg;
     std::vector<double> alpha_rad{0., 120 * M_PI / 180, 240 * M_PI / 180};
     std::vector<geometry_msgs::Point> j1_position;
@@ -160,9 +159,9 @@ public:
       EE_position[0] = x * cos(alpha_rad[i]) + y * sin(alpha_rad[i]);
       EE_position[1] = -x * sin(alpha_rad[i]) + y * cos(alpha_rad[i]);
       EE_position[2] = z;
-      std::vector<double> F1_position{0., -parameter_.f / 2 * tan_30_deg, 0.};
+      std::vector<double> F1_position{0., -parameter_.f / (2 * sqrt(3)), 0.};
       std::vector<double> E1_position{
-        EE_position[0], EE_position[1] - parameter_.e / 2 * tan_30_deg, EE_position[2]};
+        EE_position[0], EE_position[1] - parameter_.e / (2 * sqrt(3)), EE_position[2]};
       std::vector<double> E1_prime_position{0., E1_position[1], E1_position[2]};
       double y_F = F1_position[1];
       double c1 = (pow2(E1_position[0]) + pow2(E1_position[1]) + pow2(E1_position[2]) +
@@ -173,6 +172,18 @@ public:
       double c3 = -pow2(c1 + c2 * y_F) + pow2(parameter_.r_f) * (pow2(c2) + 1);
       double J_y = ((y_F - c1 * c2) - sqrt(c3)) / (1 + pow2(c2));
       double J_z = c1 + c2 * J_y;
+
+      //      double k = -(EE_position[2] / E1_prime_position[1] - y_F);
+      //      double b0 = (pow(parameter_.r_f, 2) - pow(parameter_.r_e, 2) + pow(EE_position[0], 2) -
+      //                   pow(y_F, 2) + pow(E1_prime_position[1], 2) + pow(EE_position[2], 2)) /
+      //                  2 * (E1_prime_position[1] - y_F);
+      //
+      //      double a = 1 + (1 / pow(k, 2));
+      //      double b = -1 * (2 * y_F + 2 * b0 / pow(k, 2));
+      //      double c = pow(y_F, 2) + pow(b0 / k, 2) - pow(parameter_.r_f, 2);
+      //
+      //      double J_y = quadraticFormulaBig(a, b, c);
+      //      double J_z = (J_y - b0) / k;
 
       geometry_msgs::Point solution_point;
       solution_point.x = 0.;
