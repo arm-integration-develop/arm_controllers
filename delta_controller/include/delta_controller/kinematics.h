@@ -73,8 +73,8 @@ public:
     double W2 = pow2(J2_prime.x) + pow2(J2_prime.y) + pow2(J2_prime.z);
     double W3 = pow2(J3_prime.x) + pow2(J3_prime.y) + pow2(J3_prime.z);
     double d = (J2_prime.y - J1_prime.y) * J3_prime.x - (J3_prime.y - J1_prime.y) * J2_prime.x;
-    double a1 = (-1 / d) * ((J2_prime.z - J1_prime.z) * (J3_prime.y - J1_prime.y) -
-                            (J3_prime.z - J1_prime.z) * (J2_prime.y - J1_prime.y));
+    double a1 = (1 / d) * ((J2_prime.z - J1_prime.z) * (J3_prime.y - J1_prime.y) -
+                           (J3_prime.z - J1_prime.z) * (J2_prime.y - J1_prime.y));
     double a2 =
       (-1 / d) * ((J2_prime.z - J1_prime.z) * J3_prime.x - (J3_prime.z - J1_prime.z) * J2_prime.x);
     double b1 = (1 / (2 * d)) *
@@ -99,11 +99,10 @@ public:
   std::vector<double> solveInverseKinematics(double x, double y, double z)
   {
     //        ROS_INFO_STREAM("solve ik");
-    double tan_30_deg = 0.5773502692;
     std::vector<double> jnt_angle{0., 0., 0.};
     std::vector<geometry_msgs::Point> j1_position = getJ1Position(x, y, z);
     for (int i = 0; i < 3; ++i) {
-      jnt_angle[i] = -atan(j1_position[i].z / (parameter_.f / 2 * tan_30_deg - j1_position[i].y));
+      jnt_angle[i] = -atan(j1_position[i].z / (parameter_.f / 2 * sqrt(3) - j1_position[i].y));
       //            ROS_INFO_STREAM(jnt_angle[i]);
     }
     return jnt_angle;
