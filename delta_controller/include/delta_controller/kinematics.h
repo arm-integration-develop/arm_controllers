@@ -36,60 +36,56 @@ public:
     EE_tf.header.stamp = ros::Time::now();
     EE_tf.child_frame_id = "move_ee";
     //      the algorithm of forward kinematics
-    double sin_30_deg = 0.5;
-    double cos_30_deg = sqrt(3) / 2;
-    double y_F = parameter_.f / 2 * sqrt(3);
-    double y_delta_E = parameter_.e / 2 * sqrt(3);
-    geometry_msgs::Point F1, F2, F3, J1, J2, J3, J1_prime, J2_prime, J3_prime, solution;
-    F1.x = 0;
-    F1.y = -y_F;
-    F1.z = 0;
-    F2.x = y_F * cos_30_deg;
-    F2.y = y_F * sin_30_deg;
-    F2.z = 0;
-    F3.x = -y_F * cos_30_deg;
-    F3.y = y_F * sin_30_deg;
-    F3.z = 0;
-    J1 = F1;
-    J1.y -= parameter_.r_f * cos(theta1);
-    J1.z -= parameter_.r_f * sin(theta1);
-    J2 = F2;
-    J2.x += parameter_.r_f * cos(theta2) * cos_30_deg;
-    J2.y += parameter_.r_f * cos(theta2) * sin_30_deg;
-    J2.z -= parameter_.r_f * sin(theta2);
-    J3 = F3;
-    J3.x -= parameter_.r_f * cos(theta3) * cos_30_deg;
-    J3.y += parameter_.r_f * cos(theta3) * sin_30_deg;
-    J3.z -= parameter_.r_f * sin(theta3);
-    J1_prime = J1;
-    J1_prime.y += y_delta_E;
-    J2_prime = J2;
-    J2_prime.x -= y_delta_E * cos_30_deg;
-    J2_prime.y -= y_delta_E * sin_30_deg;
-    J3_prime = J3;
-    J3_prime.x += y_delta_E * cos_30_deg;
-    J3_prime.y -= y_delta_E * sin_30_deg;
-    double W1 = pow2(J1_prime.x) + pow2(J1_prime.y) + pow2(J1_prime.z);
-    double W2 = pow2(J2_prime.x) + pow2(J2_prime.y) + pow2(J2_prime.z);
-    double W3 = pow2(J3_prime.x) + pow2(J3_prime.y) + pow2(J3_prime.z);
-    double d = (J2_prime.y - J1_prime.y) * J3_prime.x - (J3_prime.y - J1_prime.y) * J2_prime.x;
-    double a1 = (1 / d) * ((J2_prime.z - J1_prime.z) * (J3_prime.y - J1_prime.y) -
-                           (J3_prime.z - J1_prime.z) * (J2_prime.y - J1_prime.y));
-    double a2 =
-      (-1 / d) * ((J2_prime.z - J1_prime.z) * J3_prime.x - (J3_prime.z - J1_prime.z) * J2_prime.x);
-    double b1 = (1 / (2 * d)) *
-                ((W2 - W1) * (J3_prime.y - J1_prime.y) - (W3 - W1) * (J2_prime.y - J1_prime.y));
-    double b2 = (1 / (2 * d)) * ((W2 - W1) * J3_prime.x - (W3 - W1) * J2_prime.x);
-    //      solution the z value
-    double a = pow2(a1) + pow2(a2) + 1;
-    double b = 2 * (a1 * b1 + a2 * (b2 - J1_prime.y) - J1_prime.z);
-    double c = (pow2(b1) + pow2(b2 - J1_prime.y) + pow2(J1_prime.z) - pow2(parameter_.r_e));
-    solution.z = quadraticFormulaSmall(a, b, c);
-    solution.x = a1 * solution.z + b1;
-    solution.y = a2 * solution.z + b2;
-    EE_tf.transform.translation.x = solution.x;
-    EE_tf.transform.translation.y = solution.y;
-    EE_tf.transform.translation.z = solution.z;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+
+    double t = (parameter_.f - parameter_.e) * tan(M_PI / 6) / 2.0;
+
+    double y1 = -(t + parameter_.r_f * cos(theta1));
+    double z1 = -parameter_.r_f * sin(theta1);
+
+    double y2 = (t + parameter_.r_f * cos(theta2)) * sin(M_PI / 6);
+    double x2 = y2 * tan(M_PI / 3);
+    double z2 = -parameter_.r_f * sin(theta2);
+
+    double y3 = (t + parameter_.r_f * cos(theta3)) * sin(M_PI / 6);
+    double x3 = -y3 * tan(M_PI / 3);
+    double z3 = -parameter_.r_f * sin(theta3);
+
+    double dnm = (y2 - y1) * x3 - (y3 - y1) * x2;
+
+    double w1 = y1 * y1 + z1 * z1;
+    double w2 = x2 * x2 + y2 * y2 + z2 * z2;
+    double w3 = x3 * x3 + y3 * y3 + z3 * z3;
+
+    // x = (a1*z + b1)/dnm
+    double a1 = (z2 - z1) * (y3 - y1) - (z3 - z1) * (y2 - y1);
+    double b1 = -((w2 - w1) * (y3 - y1) - (w3 - w1) * (y2 - y1)) / 2.0;
+
+    // y = (a2*z + b2)/dnm;
+    double a2 = -(z2 - z1) * x3 + (z3 - z1) * x2;
+    double b2 = ((w2 - w1) * x3 - (w3 - w1) * x2) / 2.0;
+
+    // a*z^2 + b*z + c = 0
+    double aV = a1 * a1 + a2 * a2 + dnm * dnm;
+    double bV = 2.0 * (a1 * b1 + a2 * (b2 - y1 * dnm) - z1 * dnm * dnm);
+    double cV = (b2 - y1 * dnm) * (b2 - y1 * dnm) + b1 * b1 +
+                dnm * dnm * (z1 * z1 - parameter_.r_e * parameter_.r_e);
+
+    // discriminant
+    double dV = bV * bV - 4.0 * aV * cV;
+    //    if (dV < 0.0) {
+    //      return non_existing_povar_error;  // non-existing povar. return error,x,y,z
+    //    }
+
+    z = -0.5 * (bV + sqrt(dV)) / aV;
+    x = (a1 * z + b1) / dnm;
+    y = (a2 * z + b2) / dnm;
+
+    EE_tf.transform.translation.x = x;
+    EE_tf.transform.translation.y = y;
+    EE_tf.transform.translation.z = z;
     EE_tf.transform.rotation.x = 0;
     EE_tf.transform.rotation.y = 0;
     EE_tf.transform.rotation.z = 0;
