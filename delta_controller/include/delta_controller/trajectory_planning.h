@@ -7,6 +7,5 @@ namespace delta_controller
 {
 class TrajectoryPlanning
 {
-
 };
-}
+}  // namespace delta_controller
