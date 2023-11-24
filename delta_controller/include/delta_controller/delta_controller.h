@@ -40,6 +40,10 @@ private:
   {
     cmd_rt_buffer_.writeFromNonRT(*msg);
   }
+  void velCmdCB(const geometry_msgs::TwistConstPtr& msg)
+  {
+    vel_cmd_ = *msg;
+  }
   double timeout_{};
   bool use_gazebo_;
   std::vector<double> jnt_angle_{ 0., 0., 0. };
@@ -57,13 +61,13 @@ private:
   tf::TfRtBroadcaster tf_broadcaster_;
 
   //    geometry_msgs::TwistStamped vel_msgs_{};
-  geometry_msgs::Twist vel_msgs_{};
+  geometry_msgs::Twist vel_msgs_{}, vel_cmd_{};
   ros::Publisher vel_pub_{};
   std::string RC_topic_;
   double coefficient_;
   double RC_start_value_;
   ros::NodeHandle node_;
-  ros::Subscriber tf_sub_, cmd_subscriber_;
+  ros::Subscriber tf_sub_, cmd_subscriber_, vel_sub_;
   realtime_tools::RealtimeBuffer<geometry_msgs::PointStamped> cmd_rt_buffer_;
 };
 
