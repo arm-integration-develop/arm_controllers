@@ -109,7 +109,7 @@ public:
   }
 
   std::vector<double> solveVelocity(double vel_x, double vel_y, double vel_z,
-                                    std::vector<std::vector<double>> passive_angle)
+                                    std::vector<std::vector<double>> passive_angle, std::vector<double> theta_1_i)
   {
     std::vector<double> joints_vel;
     std::vector<double> end_vel{ vel_x, vel_y, vel_z };
@@ -117,19 +117,21 @@ public:
     std::vector<double> Jx, Jy, Jz, phi;
     for (int i = 0; i < 3; i++)
     {
-      phi[i] = alpha_rad[i] + M_PI;
-      Jx[i] = sin(passive_angle[i][2]) * cos(passive_angle[i][0] + passive_angle[i][1]) * cos(phi[i]) +
-              cos(passive_angle[i][2]) * sin(phi[i]);
-      Jy[i] = -sin(passive_angle[i][2]) * cos(passive_angle[i][0] + passive_angle[i][1]) * sin(phi[i]) +
-              cos(passive_angle[i][2]) * cos(phi[i]);
-      Jz[i] = sin(passive_angle[i][2]) * sin(passive_angle[i][0] + passive_angle[i][1]);
+      phi.push_back(alpha_rad[i] + M_PI / 6);
+      Jx.push_back(sin(passive_angle[i][1]) * cos(abs(theta_1_i[0]) + passive_angle[i][0]) * cos(phi[i]) +
+                   cos(passive_angle[i][1]) * sin(phi[i]));
+      Jy.push_back(-sin(passive_angle[i][1]) * cos(abs(theta_1_i[0]) + passive_angle[i][0]) * sin(phi[i]) +
+                   cos(passive_angle[i][1]) * cos(phi[i]));
+      Jz.push_back(sin(passive_angle[i][1]) * sin(abs(theta_1_i[0]) + passive_angle[i][0]));
     }
-    // clang-format off
+
     Eigen::Matrix<double, 3, 3> J_theta, J_p;
     Eigen::Matrix<double, 3, 1> vel, theta_dot;
-    J_theta <<  sin(passive_angle[0][1])*sin(passive_angle[0][2]),  0,  0,
-            0,  sin(passive_angle[1][1])*sin(passive_angle[1][2]),  0,
-            0,  0,  sin(passive_angle[2][1])*sin(passive_angle[2][2]);
+
+    // clang-format off
+    J_theta <<  sin(passive_angle[0][0])*sin(passive_angle[0][1]),  0,  0,
+                0,  sin(passive_angle[1][0])*sin(passive_angle[1][1]),  0,
+                0,  0,  sin(passive_angle[2][0])*sin(passive_angle[2][1]);
 
     J_p <<  Jx[0],  Jy[0],  Jz[0],
             Jx[1],  Jy[1],  Jz[1],
@@ -138,11 +140,11 @@ public:
     vel <<  vel_x,
             vel_y,
             vel_z;
-
     // clang-format on
-    theta_dot = J_theta.transpose() * J_p * vel;
+
+    theta_dot = J_theta.inverse() * J_p * vel;
     for (int i = 0; i < 3; i++)
-      joints_vel[i] = theta_dot[i];
+      joints_vel.push_back(theta_dot[i]);
     return joints_vel;
   }
 
@@ -173,8 +175,8 @@ public:
       //            double JO =
       //            sqrt(pow2(j1_position[i].x-transform_xyz[0])+pow2(j1_position[i].y-transform_xyz[1])+pow2(j1_position[i].z-transform_xyz[2]));
       //            double OE = y_delta_E;
-      passive_joint[0] = M_PI / 3 - cosineTheorem(FJ, JE_prime, FE_prime);
-      passive_joint[1] = -atan(transform_xyz[0] / JE_prime);
+      passive_joint[0] = M_PI - cosineTheorem(FJ, JE_prime, FE_prime);
+      passive_joint[1] = M_PI / 2 - atan(transform_xyz[0] / JE_prime);
       passive_joint[2] = -passive_joint[1];
       passive_joint[3] = -passive_joint[0] - active_jnt[i];
       passive_angle[i] = passive_joint;

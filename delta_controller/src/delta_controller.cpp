@@ -47,9 +47,9 @@ bool DeltaController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandl
 void DeltaController::update(const ros::Time& time, const ros::Duration& period)
 {
   // get zhe act angle from /tf
-  //    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(joints_[0].angle,
-  //    joints_[1].angle, joints_[2].angle);
-  geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(0., 0., 0.);
+  geometry_msgs::TransformStamped EE_tf =
+      delta_kinematics_.solveForwardKinematics(joints_[0].angle, joints_[1].angle, joints_[2].angle);
+  //  geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(0., 0., 0.);
   EE_tf.header.stamp = time;
   EE_tf.header.stamp.nsec += 1;
   tf_broadcaster_.sendTransform(EE_tf);
@@ -81,7 +81,10 @@ void DeltaController::update(const ros::Time& time, const ros::Duration& period)
   }
   if (use_gazebo_)
   {
-    passive_jnt_angle_ = delta_kinematics_.getPassiveAngle(cmd.x, cmd.y, cmd.z);
+    passive_jnt_angle_ = delta_kinematics_.getPassiveAngle(EE_tf.transform.translation.x, EE_tf.transform.translation.y,
+                                                           EE_tf.transform.translation.z);
+    std::vector<double> theta_1_i{ joints_[0].angle, joints_[1].angle, joints_[2].angle };
+    std::vector<double> vel = delta_kinematics_.solveVelocity(0., 0., 0., passive_jnt_angle_, theta_1_i);
     int j = 0;
     for (auto it = passive_joints_.begin(); it != passive_joints_.end(); ++it, ++j)
     {
