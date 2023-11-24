@@ -9,7 +9,7 @@ namespace delta_controller
 bool DeltaController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh)
 {
   controller_nh.getParam("use_gazebo", use_gazebo_);
-  realtime_tf_pub_.init(node_, "/tf", 100);
+  tf_broadcaster_.init(controller_nh);
   hardware_interface::EffortJointInterface* effort_joint_interface;
   effort_joint_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   ros::NodeHandle nh_active(controller_nh, "active");
@@ -50,7 +50,9 @@ void DeltaController::update(const ros::Time& time, const ros::Duration& period)
   //    geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(joints_[0].angle,
   //    joints_[1].angle, joints_[2].angle);
   geometry_msgs::TransformStamped EE_tf = delta_kinematics_.solveForwardKinematics(0., 0., 0.);
-  publishTF(EE_tf);
+  EE_tf.header.stamp = time;
+  EE_tf.header.stamp.nsec += 1;
+  tf_broadcaster_.sendTransform(EE_tf);
   geometry_msgs::TransformStamped fk_tf = delta_kinematics_.solveForwardKinematics(
       jnt_states_[0].getPosition(), jnt_states_[1].getPosition(), jnt_states_[2].getPosition());
   publishVel(fk_tf, EE_tf);
@@ -76,7 +78,6 @@ void DeltaController::update(const ros::Time& time, const ros::Duration& period)
   for (auto it = joints_.begin(); it != joints_.end(); ++it, ++i)
   {
     it->angle = jnt_angle_[i];
-    ROS_INFO_STREAM(jnt_angle_[i]);
   }
   if (use_gazebo_)
   {
