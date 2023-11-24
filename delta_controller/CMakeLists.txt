@@ -11,11 +11,12 @@ find_package(catkin REQUIRED
         COMPONENTS
         roscpp
 
+        arm_common
         effort_controllers
         pluginlib
         controller_interface
         realtime_tools
-        )
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -28,6 +29,7 @@ catkin_package(
         CATKIN_DEPENDS
         roscpp
 
+        arm_common
         effort_controllers
         pluginlib
         controller_interface
@@ -46,11 +48,11 @@ add_library(${PROJECT_NAME}
         include/delta_controller/kinematics.h
         include/delta_controller/delta_controller.h
         include/delta_controller/trajectory_planning.h
-        )
+)
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-        )
+)
 
 #############
 ## Install ##
