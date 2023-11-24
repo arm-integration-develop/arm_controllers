@@ -8,6 +8,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include <ros/ros.h>
 
 namespace delta_controller
@@ -144,7 +145,10 @@ public:
 
     theta_dot = J_theta.inverse() * J_p * vel;
     for (int i = 0; i < 3; i++)
+    {
       joints_vel.push_back(theta_dot[i]);
+      ROS_INFO_STREAM(i << " " << theta_dot[i]);
+    }
     return joints_vel;
   }
 
