@@ -7,6 +7,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <Eigen/Core>
 #include <ros/ros.h>
 
 namespace delta_controller
@@ -106,6 +107,45 @@ public:
     }
     return jnt_angle;
   }
+
+  std::vector<double> solveVelocity(double vel_x, double vel_y, double vel_z,
+                                    std::vector<std::vector<double>> passive_angle)
+  {
+    std::vector<double> joints_vel;
+    std::vector<double> end_vel{ vel_x, vel_y, vel_z };
+    std::vector<double> alpha_rad{ 0., 120 * M_PI / 180, 240 * M_PI / 180 };
+    std::vector<double> Jx, Jy, Jz, phi;
+    for (int i = 0; i < 3; i++)
+    {
+      phi[i] = alpha_rad[i] + M_PI;
+      Jx[i] = sin(passive_angle[i][2]) * cos(passive_angle[i][0] + passive_angle[i][1]) * cos(phi[i]) +
+              cos(passive_angle[i][2]) * sin(phi[i]);
+      Jy[i] = -sin(passive_angle[i][2]) * cos(passive_angle[i][0] + passive_angle[i][1]) * sin(phi[i]) +
+              cos(passive_angle[i][2]) * cos(phi[i]);
+      Jz[i] = sin(passive_angle[i][2]) * sin(passive_angle[i][0] + passive_angle[i][1]);
+    }
+    // clang-format off
+    Eigen::Matrix<double, 3, 3> J_theta, J_p;
+    Eigen::Matrix<double, 3, 1> vel, theta_dot;
+    J_theta <<  sin(passive_angle[0][1])*sin(passive_angle[0][2]),  0,  0,
+            0,  sin(passive_angle[1][1])*sin(passive_angle[1][2]),  0,
+            0,  0,  sin(passive_angle[2][1])*sin(passive_angle[2][2]);
+
+    J_p <<  Jx[0],  Jy[0],  Jz[0],
+            Jx[1],  Jy[1],  Jz[1],
+            Jx[2],  Jy[2],  Jz[2];
+
+    vel <<  vel_x,
+            vel_y,
+            vel_z;
+
+    // clang-format on
+    theta_dot = J_theta.transpose() * J_p * vel;
+    for (int i = 0; i < 3; i++)
+      joints_vel[i] = theta_dot[i];
+    return joints_vel;
+  }
+
   std::vector<std::vector<double>> getPassiveAngle(double x, double y, double z)
   {
     double tan_30_deg = 0.5773502692;

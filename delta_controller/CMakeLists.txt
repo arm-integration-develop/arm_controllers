@@ -15,7 +15,9 @@ find_package(catkin REQUIRED
         pluginlib
         controller_interface
         realtime_tools
-        )
+)
+
+find_package(Eigen3 REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -23,6 +25,7 @@ find_package(catkin REQUIRED
 catkin_package(
         INCLUDE_DIRS
         include
+        ${EIGEN3_INCLUDE_DIR}
         LIBRARIES
         ${PROJECT_NAME}
         CATKIN_DEPENDS
@@ -37,6 +40,8 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
+
 )
 
 ## Declare cpp executables
@@ -46,11 +51,11 @@ add_library(${PROJECT_NAME}
         include/delta_controller/kinematics.h
         include/delta_controller/delta_controller.h
         include/delta_controller/trajectory_planning.h
-        )
+)
 
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-        )
+)
 
 #############
 ## Install ##
