@@ -13,6 +13,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <effort_controllers/joint_position_controller.h>
+#include <arm_common/tools/tf_rt_broadcaster.h>
 
 namespace delta_controller
 {
@@ -35,14 +36,6 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   void publishVel(const geometry_msgs::TransformStamped transform,
                   const geometry_msgs::TransformStamped start_transform);
-  void publishTF(const geometry_msgs::TransformStamped transform)
-  {
-    if (realtime_tf_pub_.trylock())
-    {
-      realtime_tf_pub_.msg_ = transform;
-      realtime_tf_pub_.unlockAndPublish();
-    }
-  }
   void commandCB(const geometry_msgs::PointStampedConstPtr& msg)
   {
     cmd_rt_buffer_.writeFromNonRT(*msg);
@@ -61,7 +54,8 @@ private:
   std::vector<hardware_interface::JointStateHandle> jnt_states_;
   delta_controller::DeltaKinematics delta_kinematics_;
 
-  realtime_tools::RealtimePublisher<geometry_msgs::TransformStamped> realtime_tf_pub_{};
+  tf::TfRtBroadcaster tf_broadcaster_;
+
   //    geometry_msgs::TwistStamped vel_msgs_{};
   geometry_msgs::Twist vel_msgs_{};
   ros::Publisher vel_pub_{};
