@@ -18,12 +18,15 @@ find_package(catkin REQUIRED
         realtime_tools
 )
 
+find_package(Eigen3 REQUIRED)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
 catkin_package(
         INCLUDE_DIRS
         include
+        ${EIGEN3_INCLUDE_DIR}
         LIBRARIES
         ${PROJECT_NAME}
         CATKIN_DEPENDS
@@ -39,6 +42,8 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
+
 )
 
 ## Declare cpp executables
